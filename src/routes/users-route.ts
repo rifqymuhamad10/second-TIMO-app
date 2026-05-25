@@ -11,7 +11,10 @@ export async function registerHandler(request: Request) {
       { status: 200 }
     );
   } catch (error: any) {
-    if (error.message === "email sudah terdaftar ") {
+    if (
+      error.message === "email sudah terdaftar " ||
+      error.message === "username tidak boleh lebih dari 255 karakter"
+    ) {
       return NextResponse.json(
         { message: error.message },
         { status: 400 }

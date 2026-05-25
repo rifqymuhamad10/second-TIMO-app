@@ -10,6 +10,10 @@ export async function registerUser(payload: any) {
     throw new Error("Missing required fields");
   }
 
+  if (username.length > 255) {
+    throw new Error("username tidak boleh lebih dari 255 karakter");
+  }
+
   // Cek apakah email sudah terdaftar
   const existingUser = await findUserByEmail(email);
   if (existingUser) {
