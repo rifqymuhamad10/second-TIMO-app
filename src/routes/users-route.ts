@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { registerUser, loginUser, getCurrentUser } from "@/services/users-service";
+import { registerUser, loginUser, getCurrentUser, logoutUser } from "@/services/users-service";
 
 export async function registerHandler(request: Request) {
   try {
@@ -82,3 +82,38 @@ export async function getCurrentUserHandler(request: Request) {
     );
   }
 }
+
+export async function logoutHandler(request: Request) {
+  try {
+    const authHeader = request.headers.get("Authorization");
+
+    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+      return NextResponse.json(
+        { message: "unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Ambil token setelah tulisan "bearer "
+    const token = authHeader.substring(7).trim();
+    const user = await logoutUser(token);
+
+    return NextResponse.json(
+      { data: user },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    if (error.message === "unauthorized") {
+      return NextResponse.json(
+        { message: "unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Internal server error", error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
