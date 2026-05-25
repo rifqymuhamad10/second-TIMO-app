@@ -1,5 +1,7 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { findUserByEmail, insertUser } from "@/models/users-model";
+import { insertSession } from "@/models/sessions-model";
 
 export async function registerUser(payload: any) {
   const { username, password, email } = payload;
@@ -32,3 +34,36 @@ export async function registerUser(payload: any) {
   const user = await insertUser(newUserData);
   return user;
 }
+
+export async function loginUser(payload: any) {
+  const { email, password } = payload;
+
+  if (!email || !password) {
+    throw new Error("Missing required fields");
+  }
+
+  // 1. Cari user berdasarkan email
+  const user = await findUserByEmail(email);
+  if (!user) {
+    throw new Error("email atau password salah");
+  }
+
+  // 2. Bandingkan password menggunakan bcrypt
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    throw new Error("email atau password salah");
+  }
+
+  // 3. Generate token UUID baru
+  const token = crypto.randomUUID();
+
+  // 4. Simpan session ke database
+  await insertSession({
+    token,
+    user_id: user.id
+  });
+
+  // 5. Kembalikan token untuk response API
+  return token;
+}
+
