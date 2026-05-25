@@ -20,3 +20,17 @@ export async function insertSession(sessionData: { token: string; user_id: numbe
 
   return data;
 }
+
+export async function findSessionByToken(token: string) {
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}

@@ -27,3 +27,17 @@ export async function insertUser(userData: any) {
 
   return data;
 }
+
+export async function findUserById(id: number) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
