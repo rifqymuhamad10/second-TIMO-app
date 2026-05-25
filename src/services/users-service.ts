@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { findUserByEmail, insertUser } from "@/models/users-model";
-import { insertSession } from "@/models/sessions-model";
+import { findUserByEmail, insertUser, findUserById } from "@/models/users-model";
+import { insertSession, findSessionByToken } from "@/models/sessions-model";
 
 export async function registerUser(payload: any) {
   const { username, password, email } = payload;
@@ -67,3 +67,25 @@ export async function loginUser(payload: any) {
   return token;
 }
 
+export async function getCurrentUser(token: string) {
+  if (!token) {
+    throw new Error("unauthorized");
+  }
+
+  // 1. Cari session berdasarkan token
+  const session = await findSessionByToken(token);
+  if (!session) {
+    throw new Error("unauthorized");
+  }
+
+  // 2. Cari user berdasarkan user_id dari session
+  const user = await findUserById(session.user_id);
+  if (!user) {
+    throw new Error("unauthorized");
+  }
+
+  // 3. Keamanan: Hapus password hash dari response
+  const { password, ...userWithoutPassword } = user;
+
+  return userWithoutPassword;
+}
