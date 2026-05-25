@@ -34,3 +34,19 @@ export async function findSessionByToken(token: string) {
 
   return data;
 }
+
+export async function deleteSessionByToken(token: string) {
+  const { data, error } = await supabase
+    .from("sessions")
+    .delete()
+    .eq("token", token)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
