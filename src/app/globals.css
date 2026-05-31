@@ -1,29 +1,81 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: light --default, dark;
+  themes: light --default;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FFFDF0;
+  --foreground: #1A1A1A;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-nb-yellow: #FFEB3B;
+  --color-nb-red: #FF5252;
+  --color-nb-blue: #2196F3;
+  --color-nb-green: #69F0AE;
+  --color-nb-bg: #FFFDF0;
+  --color-nb-surface: #FFFFFF;
+  --color-nb-ink: #1A1A1A;
+  
+  --shadow-nb: 4px 4px 0px #1A1A1A;
+  --shadow-nb-lg: 6px 6px 0px #1A1A1A;
+  --shadow-nb-xl: 8px 8px 0px #1A1A1A;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  margin: 0;
+}
+
+/* Custom pattern dot grid */
+.bg-dot-grid {
+  background-size: 24px 24px;
+  background-image: radial-gradient(circle, rgba(26, 26, 26, 0.15) 1.5px, transparent 1.5px);
+}
+
+/* Custom classes for neubrutalism border */
+.border-nb {
+  border: 3px solid #1A1A1A;
+}
+
+.border-nb-2 {
+  border: 2px solid #1A1A1A;
+}
+
+.border-nb-r {
+  border-right: 3px solid #1A1A1A;
+}
+
+.border-nb-b {
+  border-bottom: 3px solid #1A1A1A;
+}
+
+.border-nb-t {
+  border-top: 3px solid #1A1A1A;
+}
+
+.border-nb-l {
+  border-left: 3px solid #1A1A1A;
+}
+
+/* Shimmer animation for skeleton */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
 }
