@@ -28,10 +28,22 @@ export async function registerHandler(request: Request) {
   }
 }
 
+import { cookies } from "next/headers";
+
 export async function loginHandler(request: Request) {
   try {
     const body = await request.json();
     const token = await loginUser(body);
+
+    // Set cookie
+    const cookieStore = await cookies();
+    cookieStore.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7 // 1 week
+    });
 
     return NextResponse.json(
       { data: token },
@@ -54,17 +66,23 @@ export async function loginHandler(request: Request) {
 
 export async function getCurrentUserHandler(request: Request) {
   try {
+    let token = "";
     const authHeader = request.headers.get("Authorization");
 
-    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+      token = authHeader.substring(7).trim();
+    } else {
+      const cookieStore = await cookies();
+      token = cookieStore.get("token")?.value || "";
+    }
+
+    if (!token) {
       return NextResponse.json(
         { message: "unauthorized" },
         { status: 401 }
       );
     }
 
-    // Ambil token setelah tulisan "bearer "
-    const token = authHeader.substring(7).trim();
     const user = await getCurrentUser(token);
 
     return NextResponse.json(
@@ -88,18 +106,28 @@ export async function getCurrentUserHandler(request: Request) {
 
 export async function logoutHandler(request: Request) {
   try {
+    let token = "";
     const authHeader = request.headers.get("Authorization");
 
-    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+      token = authHeader.substring(7).trim();
+    } else {
+      const cookieStore = await cookies();
+      token = cookieStore.get("token")?.value || "";
+    }
+
+    if (!token) {
       return NextResponse.json(
         { message: "unauthorized" },
         { status: 401 }
       );
     }
 
-    // Ambil token setelah tulisan "bearer "
-    const token = authHeader.substring(7).trim();
     const user = await logoutUser(token);
+
+    // Hapus cookie
+    const cookieStore = await cookies();
+    cookieStore.delete("token");
 
     return NextResponse.json(
       { data: user },
