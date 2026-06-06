@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Edit3, Trash2, CheckCircle2, Circle } from "lucide-react";
 import Badge from "../ui/Badge";
 import { getSubjectColor } from "@/lib/colors";
+import DeadlineCountdown from "./DeadlineCountdown";
 
 export interface Task {
   id: number;
@@ -29,7 +30,7 @@ interface TaskCardProps {
 export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: TaskCardProps) {
   // Tentukan warna latar berdasarkan status dan mata kuliah
   const subColor = getSubjectColor(task.subject);
-  
+
   let bgStyle = subColor.bg;
   if (task.status === "inprogress") {
     bgStyle = "bg-[#E3F2FD]"; // Biru muda
@@ -148,7 +149,7 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
       {/* Atas: Badge Prioritas & Status */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <Badge variant={task.priority}>{getPriorityLabel(task.priority)}</Badge>
-        
+
         <button
           onClick={() => onToggleStatus(task)}
           className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider border-nb-2 bg-nb-surface text-nb-ink px-2 py-0.5 hover:-translate-y-0.5 hover:shadow-[1px_1px_0px_#1A1A1A] active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
@@ -164,10 +165,11 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
 
       {/* Tengah: Judul & Deskripsi */}
       <div className="flex-grow mb-6">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border-nb-2 ${subColor.accent}`}>
             {task.subject}
           </span>
+          <DeadlineCountdown deadlineStr={task.deadline} status={task.status} />
         </div>
         <h3 className="font-display font-extrabold text-lg text-nb-ink leading-tight mb-2 uppercase break-words">
           {task.title}
@@ -219,7 +221,7 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
           >
             <Edit3 className="w-4 h-4" />
           </button>
-          
+
           {/* Tombol Hapus */}
           <button
             onClick={() => onDelete(task.id)}
