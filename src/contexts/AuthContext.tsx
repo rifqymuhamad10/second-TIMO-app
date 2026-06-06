@@ -42,8 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(result.data);
         setToken(authToken);
       } else {
-        // Token tidak valid atau kedaluwarsa
+        // Token tidak valid atau kedaluwarsa — hapus semua sesi & alihkan ke login
         logoutState();
+        router.replace("/login");
       }
     } catch (err) {
       console.error("Gagal mengambil data user saat ini:", err);
@@ -64,6 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logoutState = () => {
     localStorage.removeItem("token");
+    // Hapus cookie token agar middleware tidak mengira user masih login
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     setUser(null);
     setToken(null);
   };

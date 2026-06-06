@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, User, SlidersHorizontal, Plus } from "lucide-react";
+import { Home, User, SlidersHorizontal, Plus, Timer } from "lucide-react";
 
 interface MobileNavProps {
   onOpenSidebar: () => void;
@@ -48,6 +48,16 @@ export default function MobileNav({ onOpenSidebar, onOpenAddTask }: MobileNavPro
           <SlidersHorizontal className="w-5 h-5 mb-1 stroke-[2]" />
           Filter
         </button>
+
+        <Link
+          href="/pomodoro"
+          className={`flex flex-col items-center justify-center w-16 h-full font-display font-extrabold text-[10px] uppercase tracking-wide transition-colors ${
+            isLinkActive("/pomodoro") ? "text-nb-ink" : "text-nb-ink/50"
+          }`}
+        >
+          <Timer className={`w-5 h-5 mb-1 ${isLinkActive("/pomodoro") ? "stroke-[2.5]" : "stroke-[2]"}`} />
+          Pomodoro
+        </Link>
 
         <Link
           href="/profile"

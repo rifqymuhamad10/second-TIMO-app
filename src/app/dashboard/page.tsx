@@ -17,7 +17,12 @@ import { Task } from "@/components/tasks/TaskCard";
 import { ClipboardList, Hourglass, CheckCircle2, Plus } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
+
+  // Tangani respon 401: hapus sesi dan redirect ke login
+  const handle401 = async () => {
+    await logout();
+  };
   
   // State Tugas
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -58,8 +63,15 @@ export default function DashboardPage() {
         },
       });
 
+      // Jika token tidak valid / sesi habis, logout otomatis
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Gagal mengambil data tugas");
+        const result = await res.json();
+        throw new Error(result.message || "Gagal mengambil data tugas");
       }
 
       const result = await res.json();
@@ -223,6 +235,12 @@ export default function DashboardPage() {
         body: JSON.stringify(payload),
       });
 
+      // Jika token tidak valid / sesi habis, logout otomatis
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
+
       const result = await res.json();
 
       if (!res.ok) {
@@ -252,8 +270,14 @@ export default function DashboardPage() {
         },
       });
 
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Gagal menghapus tugas");
+        const result = await res.json();
+        throw new Error(result.message || "Gagal menghapus tugas");
       }
 
       // Reload tugas
@@ -283,6 +307,11 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({ status: nextStatus }),
       });
+
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
 
       if (!res.ok) {
         throw new Error("Gagal mengubah status");

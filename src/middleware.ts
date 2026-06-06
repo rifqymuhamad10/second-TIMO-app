@@ -6,7 +6,10 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register");
-  const isProtectedRoute = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
+  const isProtectedRoute =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/pomodoro");
 
   if (!token && isProtectedRoute) {
     // Pengguna belum login mencoba masuk halaman terproteksi -> alihkan ke login
@@ -25,5 +28,5 @@ export function middleware(request: NextRequest) {
 
 // Konfigurasi path mana saja yang akan difilter oleh middleware
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/profile/:path*", "/pomodoro/:path*", "/login", "/register"],
 };

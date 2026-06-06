@@ -6,13 +6,27 @@ import {
   updateTask,
   deleteTask,
 } from "@/models/tasks-model";
+import { getPomodoroSessionCountsPerTask } from "@/models/pomodoro-model";
 
 export async function getTasksForUser(token: string) {
   const user = await getCurrentUser(token);
   if (!user) {
     throw new Error("unauthorized");
   }
-  return await findTasksByUserId(user.id);
+  const tasks = await findTasksByUserId(user.id);
+  try {
+    const counts = await getPomodoroSessionCountsPerTask(user.id);
+    return tasks.map((task: any) => ({
+      ...task,
+      pomodoro_count: counts[task.id] || 0,
+    }));
+  } catch (err) {
+    console.error("Gagal mendapatkan jumlah sesi Pomodoro:", err);
+    return tasks.map((task: any) => ({
+      ...task,
+      pomodoro_count: 0,
+    }));
+  }
 }
 
 export async function createTaskForUser(token: string, payload: any) {

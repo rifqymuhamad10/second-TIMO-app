@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar, Edit3, Trash2, CheckCircle2, Circle } from "lucide-react";
 import Badge from "../ui/Badge";
 import { getSubjectColor } from "@/lib/colors";
@@ -16,6 +16,7 @@ export interface Task {
   deadline: string;
   created_at: string;
   updated_at: string;
+  pomodoro_count?: number;
 }
 
 interface TaskCardProps {
@@ -35,6 +36,70 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
   } else if (task.status === "done") {
     bgStyle = "bg-[#F1F8E9]"; // Hijau muda
   }
+
+  const [isTimerActive, setIsTimerActive] = useState(false);
+
+  useEffect(() => {
+    const checkTimerActive = () => {
+      const storedState = localStorage.getItem("timo-pomodoro-state");
+      if (storedState) {
+        try {
+          const parsed = JSON.parse(storedState);
+          if (parsed.isRunning && Number(parsed.activeTaskId) === Number(task.id)) {
+            setIsTimerActive(true);
+            return;
+          }
+        } catch (e) {}
+      }
+      setIsTimerActive(false);
+    };
+
+    checkTimerActive();
+
+    // Dengarkan perubahan local storage (untuk sinkronisasi antar tab/komponen)
+    window.addEventListener("storage", checkTimerActive);
+    // Interval check juga untuk mendeteksi perubahan cepat
+    const interval = setInterval(checkTimerActive, 1000);
+
+    return () => {
+      window.removeEventListener("storage", checkTimerActive);
+      clearInterval(interval);
+    };
+  }, [task.id]);
+
+  const startPomodoroForTask = () => {
+    localStorage.setItem("timo-active-task-id", String(task.id));
+
+    let currentCount = 0;
+    const storedState = localStorage.getItem("timo-pomodoro-state");
+    if (storedState) {
+      try {
+        const parsed = JSON.parse(storedState);
+        currentCount = parsed.focusSessionCount || 0;
+      } catch (e) {}
+    }
+
+    let focusDuration = 25;
+    const storedSettings = localStorage.getItem("timo-pomodoro-settings");
+    if (storedSettings) {
+      try {
+        const parsed = JSON.parse(storedSettings);
+        focusDuration = parsed.focusDuration || 25;
+      } catch (e) {}
+    }
+
+    const newState = {
+      timeLeft: focusDuration * 60,
+      isRunning: true,
+      sessionType: "focus",
+      activeTaskId: task.id,
+      focusSessionCount: currentCount,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem("timo-pomodoro-state", JSON.stringify(newState));
+
+    window.location.href = "/pomodoro";
+  };
 
   // Format tanggal Indonesia
   const formatDate = (dateStr: string) => {
@@ -114,12 +179,38 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
 
       {/* Bawah: Deadline & Aksi */}
       <div className="border-t-2 border-nb-ink/10 pt-4 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-nb-ink/70">
-          <Calendar className="w-4 h-4 text-nb-ink/60" />
-          {formatDate(task.deadline)}
+        <div className="flex items-center gap-3 flex-wrap">
+          {task.pomodoro_count !== undefined && (
+            <span className="font-mono font-bold text-xs text-nb-ink flex items-center gap-1" title="Jumlah sesi Pomodoro selesai">
+              🍅 ×{task.pomodoro_count}
+            </span>
+          )}
+          <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-nb-ink/70">
+            <Calendar className="w-4 h-4 text-nb-ink/60" />
+            {formatDate(task.deadline)}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Tombol Pomodoro */}
+          {isTimerActive ? (
+            <button
+              onClick={() => window.location.href = "/pomodoro"}
+              className="px-2.5 py-2 border-nb-2 bg-nb-red text-white hover:bg-red-600 font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              title="Timer Pomodoro sedang berjalan"
+            >
+              <span>⏱ Aktif</span>
+            </button>
+          ) : (
+            <button
+              onClick={startPomodoroForTask}
+              className="px-2.5 py-2 border-nb-2 bg-nb-surface text-nb-ink hover:bg-nb-yellow font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              title="Mulai Sesi Pomodoro untuk tugas ini"
+            >
+              <span>🍅 Fokus</span>
+            </button>
+          )}
+
           {/* Tombol Edit */}
           <button
             onClick={() => onEdit(task)}

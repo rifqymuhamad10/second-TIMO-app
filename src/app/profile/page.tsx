@@ -9,6 +9,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import { Task } from "@/components/tasks/TaskCard";
 import { User, Mail, Award, BookOpen, LogOut, ArrowLeft } from "lucide-react";
 import Link from "next/navigation";
+import PomodoroStats from "@/components/pomodoro/PomodoroStats";
 
 export default function ProfilePage() {
   const { user, logout, token } = useAuth();
@@ -158,6 +159,9 @@ export default function ProfilePage() {
               </div>
             )}
           </section>
+
+          {/* Card 3: Statistik Pomodoro */}
+          <PomodoroStats />
 
           {/* Tombol Logout Danger */}
           <div className="flex justify-center mt-2">

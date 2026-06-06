@@ -1,6 +1,11 @@
 import { supabase } from "@/lib/supabaseClient";
+import { isMockEnabled, mockDb } from "@/lib/mockDb";
 
 export async function findUserByEmail(email: string) {
+  if (isMockEnabled) {
+    return mockDb.findUserByEmail(email);
+  }
+
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -15,6 +20,10 @@ export async function findUserByEmail(email: string) {
 }
 
 export async function insertUser(userData: any) {
+  if (isMockEnabled) {
+    return mockDb.insertUser(userData);
+  }
+
   const { data, error } = await supabase
     .from("users")
     .insert([userData])
@@ -29,6 +38,10 @@ export async function insertUser(userData: any) {
 }
 
 export async function findUserById(id: number) {
+  if (isMockEnabled) {
+    return mockDb.findUserById(id);
+  }
+
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -41,3 +54,4 @@ export async function findUserById(id: number) {
 
   return data;
 }
+
