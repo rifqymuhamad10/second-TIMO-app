@@ -22,20 +22,29 @@ export default function ProfilePage() {
   // Edit Profile States
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [formUsername, setFormUsername] = useState("");
-  const [formRole, setFormRole] = useState("user");
+  const [formRole, setFormRole] = useState("mahasiswa");
   const [formMajor, setFormMajor] = useState("");
+  const [formInstitution, setFormInstitution] = useState("");
   const [formAvatarUrl, setFormAvatarUrl] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
+  const getRoleLabel = (role?: string) => {
+    if (role === "mahasiswa") return "Mahasiswa";
+    if (role === "pelajar") return "Pelajar";
+    if (role === "umum") return "Umum";
+    return role || "Mahasiswa";
+  };
+
   // Initialize form fields when user data is loaded
   useEffect(() => {
     if (user) {
       setFormUsername(user.username || "");
-      setFormRole(user.role || "user");
-      setFormMajor(user.major || "Rekayasa Perangkat Lunak (RPL)");
+      setFormRole(user.role || "mahasiswa");
+      setFormMajor(user.major || "");
+      setFormInstitution(user.institution || "");
       setFormAvatarUrl(user.avatar_url || "");
     }
   }, [user, isEditModalOpen]);
@@ -53,6 +62,7 @@ export default function ProfilePage() {
         username: formUsername,
         role: formRole,
         major: formMajor,
+        institution: formInstitution,
         avatar_url: formAvatarUrl,
       };
 
@@ -165,7 +175,7 @@ export default function ProfilePage() {
                 {user?.username || "Nama Pengguna"}
               </h2>
               <p className="font-body text-sm font-bold uppercase tracking-wider text-nb-ink/50 mb-4">
-                {user?.role === "dosen" ? "Dosen" : "Mahasiswa"} • Universitas UIN SGD Bandung
+                {getRoleLabel(user?.role)} • {user?.institution || "Sekolah / Kampus"}
               </p>
 
               <div className="flex flex-col gap-2.5 max-w-sm mx-auto sm:mx-0">
@@ -175,11 +185,11 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
                   <Award className="w-4 h-4 text-nb-ink/60" />
-                  <span>Peran: <strong className="font-bold text-nb-ink">{user?.role === "dosen" ? "Dosen" : "Mahasiswa"}</strong></span>
+                  <span>Status: <strong className="font-bold text-nb-ink">{getRoleLabel(user?.role)}</strong></span>
                 </div>
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
                   <BookOpen className="w-4 h-4 text-nb-ink/60" />
-                  <span className="break-words">Jurusan: {user?.major || "Rekayasa Perangkat Lunak (RPL)"}</span>
+                  <span className="break-words">Jurusan / Kelas: {user?.major || "Jurusan / Kelas"}</span>
                 </div>
               </div>
 
@@ -293,8 +303,8 @@ export default function ProfilePage() {
         <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
           <Input
             id="profile-username"
-            label="Nama Lengkap / Username *"
-            placeholder="Masukkan nama baru..."
+            label="Nama Lengkap *"
+            placeholder="Nama Lengkap"
             value={formUsername}
             onChange={(e) => setFormUsername(e.target.value)}
             disabled={formSubmitting}
@@ -306,7 +316,7 @@ export default function ProfilePage() {
               htmlFor="profile-role"
               className="font-body font-bold text-sm tracking-wide text-nb-ink uppercase"
             >
-              Peran (Role) *
+              Status / Peran *
             </label>
             <select
               id="profile-role"
@@ -315,15 +325,25 @@ export default function ProfilePage() {
               disabled={formSubmitting}
               className="w-full bg-nb-surface text-nb-ink border-nb px-4 h-12 text-base font-body focus:outline-none focus:border-nb-blue transition-colors cursor-pointer"
             >
-              <option value="user">Mahasiswa</option>
-              <option value="dosen">Dosen</option>
+              <option value="mahasiswa">Mahasiswa</option>
+              <option value="pelajar">Pelajar</option>
+              <option value="umum">Umum</option>
             </select>
           </div>
 
           <Input
+            id="profile-institution"
+            label="Sekolah / Kampus"
+            placeholder="Sekolah / Kampus"
+            value={formInstitution}
+            onChange={(e) => setFormInstitution(e.target.value)}
+            disabled={formSubmitting}
+          />
+
+          <Input
             id="profile-major"
-            label="Jurusan / Departemen"
-            placeholder="Contoh: Rekayasa Perangkat Lunak (RPL)"
+            label="Jurusan / Kelas"
+            placeholder="Jurusan / Kelas"
             value={formMajor}
             onChange={(e) => setFormMajor(e.target.value)}
             disabled={formSubmitting}
@@ -332,7 +352,7 @@ export default function ProfilePage() {
           <Input
             id="profile-avatar"
             label="URL Foto Profil"
-            placeholder="Contoh: https://api.dicebear.com/7.x/pixel-art/svg"
+            placeholder="Masukkan URL Foto Profil"
             value={formAvatarUrl}
             onChange={(e) => setFormAvatarUrl(e.target.value)}
             disabled={formSubmitting}
