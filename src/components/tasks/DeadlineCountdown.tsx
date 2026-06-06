@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { AlertTriangle, Clock, Calendar } from "lucide-react";
 
 interface DeadlineCountdownProps {
   deadlineStr: string;
@@ -44,7 +45,7 @@ export default function DeadlineCountdown({ deadlineStr, status }: DeadlineCount
         // Hitung selisih hari keterlambatan secara matematis
         const diffDays = Math.ceil(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
         setUrgency("overdue");
-        setTimeLeft(`⚠️ Terlambat ${diffDays} Hari`);
+        setTimeLeft(`Terlambat ${diffDays} Hari`);
         return;
       }
 
@@ -56,9 +57,9 @@ export default function DeadlineCountdown({ deadlineStr, status }: DeadlineCount
         const diffDays = Math.floor(diffMs / oneDay);
         setUrgency("normal");
         if (diffDays === 1) {
-          setTimeLeft("⏰ Besok");
+          setTimeLeft("Besok");
         } else {
-          setTimeLeft(`📅 ${diffDays} Hari Lagi`);
+          setTimeLeft(`${diffDays} Hari Lagi`);
         }
       } else {
         // Sisa waktu <= 24 jam: tampilkan countdown HH:MM:SS
@@ -67,7 +68,7 @@ export default function DeadlineCountdown({ deadlineStr, status }: DeadlineCount
         const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
         const pad = (num: number) => String(num).padStart(2, "0");
-        setTimeLeft(`⏰ ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
+        setTimeLeft(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
 
         // Sisa waktu <= 3 jam masuk kategori kritis (merah berdetak/berdenyut)
         if (hours < 3) {
@@ -87,27 +88,33 @@ export default function DeadlineCountdown({ deadlineStr, status }: DeadlineCount
   if (status === "done" || !timeLeft) return null;
 
   // Kelas badge bergaya Neo-brutalism
-  let badgeClass = "px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border-nb-2 transition-all duration-300";
+  let badgeClass = "px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border-nb-2 transition-all duration-300 flex items-center gap-1";
 
+  let UrgencyIcon = Calendar;
   switch (urgency) {
     case "overdue":
       badgeClass += " bg-nb-red text-white border-nb-ink";
+      UrgencyIcon = AlertTriangle;
       break;
     case "critical":
       badgeClass += " bg-nb-red text-white border-nb-ink animate-pulse";
+      UrgencyIcon = AlertTriangle;
       break;
     case "urgent":
       badgeClass += " bg-nb-yellow text-nb-ink border-nb-ink";
+      UrgencyIcon = Clock;
       break;
     case "normal":
     default:
       badgeClass += " bg-nb-surface text-nb-ink/70 border-nb-ink";
+      UrgencyIcon = Calendar;
       break;
   }
 
   return (
     <span className={badgeClass}>
-      {timeLeft}
+      <UrgencyIcon className="w-3 h-3 flex-shrink-0" />
+      <span>{timeLeft}</span>
     </span>
   );
 }

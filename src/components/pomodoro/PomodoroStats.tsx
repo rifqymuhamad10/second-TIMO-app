@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Skeleton from "../ui/Skeleton";
-import { Flame, Hourglass, Trophy, BarChart3 } from "lucide-react";
+import { Flame, Hourglass, Trophy, BarChart3, AlertTriangle } from "lucide-react";
 
 interface PomodoroStatsData {
   totalSessions: number;
@@ -62,8 +62,9 @@ export default function PomodoroStats() {
 
   if (error || !stats) {
     return (
-      <div className="bg-nb-surface border-nb shadow-nb-lg p-6 text-center text-nb-ink/50 font-bold uppercase tracking-wider text-xs">
-        ⚠️ {error || "Gagal memuat statistik Pomodoro"}
+      <div className="bg-nb-surface border-nb shadow-nb-lg p-6 text-center text-nb-ink/50 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2">
+        <AlertTriangle className="w-4 h-4 text-nb-red flex-shrink-0" />
+        <span>{error || "Gagal memuat statistik Pomodoro"}</span>
       </div>
     );
   }
@@ -86,7 +87,7 @@ export default function PomodoroStats() {
                 Total Sesi Fokus
               </p>
               <p className="font-display font-black text-3xl text-nb-ink mt-1">
-                {stats.totalSessions} 🍅
+                {stats.totalSessions} <span className="text-lg font-bold">Sesi</span>
               </p>
             </div>
             <p className="font-body text-xs text-nb-ink/70 mt-3 border-t border-nb-ink/10 pt-2">

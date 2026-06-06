@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { AlertTriangle } from "lucide-react";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -123,8 +124,9 @@ export default function RegisterPage() {
               </h2>
 
               {error && (
-                <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-6 font-body font-bold text-xs uppercase text-nb-red animate-shake">
-                  ⚠️ {error}
+                <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-6 font-body font-bold text-xs uppercase text-nb-red animate-shake flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <span>{error}</span>
                 </div>
               )}
 

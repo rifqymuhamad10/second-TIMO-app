@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import { Task } from "@/components/tasks/TaskCard";
-import { User, Mail, Award, BookOpen, LogOut, ArrowLeft, Edit2 } from "lucide-react";
+import { User, Mail, Award, BookOpen, LogOut, ArrowLeft, Edit2, Camera, AlertTriangle, CheckCircle2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PomodoroStats from "@/components/pomodoro/PomodoroStats";
 import Modal from "@/components/ui/Modal";
@@ -31,6 +31,13 @@ export default function ProfilePage() {
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
+  // Avatar Upload States
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+
   const getRoleLabel = (role?: string) => {
     if (role === "mahasiswa") return "Mahasiswa";
     if (role === "pelajar") return "Pelajar";
@@ -48,6 +55,65 @@ export default function ProfilePage() {
       setFormAvatarUrl(user.avatar_url || "");
     }
   }, [user, isEditModalOpen]);
+
+  // Handle pemilihan file avatar dari galeri
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError("Tipe file tidak didukung. Gunakan JPG, PNG, WebP, atau GIF.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Ukuran file melebihi batas 5 MB.");
+      return;
+    }
+
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setAvatarPreview(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload avatar ke server
+  const handleAvatarUpload = async () => {
+    const file = avatarInputRef.current?.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    try {
+      const activeToken = token || localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const res = await fetch("/api/users/avatar", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${activeToken}` },
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Gagal mengunggah foto");
+
+      setUploadSuccess("Foto profil berhasil diperbarui!");
+      setAvatarPreview(null);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+      await refreshUser();
+      setTimeout(() => setUploadSuccess(null), 3000);
+    } catch (err: any) {
+      setUploadError(err.message || "Terjadi kesalahan saat upload");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,16 +227,37 @@ export default function ProfilePage() {
           {/* Card 1: Profil Utama */}
           <section className="bg-nb-surface border-nb shadow-nb-lg p-6 md:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {/* Avatar Kotak Kuning / Image */}
-            <div className="w-24 h-24 sm:w-28 sm:h-28 bg-nb-yellow border-nb shadow-nb flex items-center justify-center font-display font-black text-4xl md:text-5xl text-nb-ink select-none flex-shrink-0 overflow-hidden relative">
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="Profile Photo" className="w-full h-full object-cover" />
-              ) : (
-                user?.username?.charAt(0).toUpperCase() || "U"
-              )}
+            <div className="relative flex-shrink-0">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 bg-nb-yellow border-nb shadow-nb flex items-center justify-center font-display font-black text-4xl md:text-5xl text-nb-ink select-none overflow-hidden">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="Foto Profil" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="select-none">{user?.username?.charAt(0).toUpperCase() || "U"}</span>
+                )}
+              </div>
+              {/* Tombol Kamera */}
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                title="Ganti Foto Profil"
+                className="absolute -bottom-2 -right-2 w-8 h-8 bg-nb-ink border-nb-2 border-nb-ink text-white flex items-center justify-center shadow-[2px_2px_0px_#fff] hover:bg-nb-blue hover:border-nb-blue transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarFileChange}
+                className="hidden"
+              />
             </div>
 
+
             {/* Detail Profil */}
-            <div className="flex-grow text-center sm:text-left">
+            <div className="flex-grow text-center sm:text-left w-full">
               <h2 className="font-display font-black text-2xl uppercase tracking-wider text-nb-ink mb-1 break-words">
                 {user?.username || "Nama Pengguna"}
               </h2>
@@ -180,20 +267,63 @@ export default function ProfilePage() {
 
               <div className="flex flex-col gap-2.5 max-w-sm mx-auto sm:mx-0">
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
-                  <Mail className="w-4 h-4 text-nb-ink/60" />
+                  <Mail className="w-4 h-4 text-nb-ink/60 flex-shrink-0" />
                   <span className="break-all">{user?.email || "email@mahasiswa.ac.id"}</span>
                 </div>
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
-                  <Award className="w-4 h-4 text-nb-ink/60" />
+                  <Award className="w-4 h-4 text-nb-ink/60 flex-shrink-0" />
                   <span>Status: <strong className="font-bold text-nb-ink">{getRoleLabel(user?.role)}</strong></span>
                 </div>
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
-                  <BookOpen className="w-4 h-4 text-nb-ink/60" />
+                  <BookOpen className="w-4 h-4 text-nb-ink/60 flex-shrink-0" />
                   <span className="break-words">Jurusan / Kelas: {user?.major || "Jurusan / Kelas"}</span>
                 </div>
               </div>
 
-              <div className="mt-5 flex justify-center sm:justify-start">
+              {/* Aksi Upload Avatar & Pesan Feedback */}
+              {(avatarPreview || uploadError || uploadSuccess) && (
+                <div className="mt-4 max-w-sm mx-auto sm:mx-0">
+                  {uploadError && (
+                    <div className="flex items-center gap-2 bg-red-50 border-2 border-red-500 p-3 mb-2 text-red-700 font-body text-xs font-bold">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      {uploadError}
+                    </div>
+                  )}
+                  {uploadSuccess && (
+                    <div className="flex items-center gap-2 bg-green-50 border-2 border-green-600 p-3 mb-2 text-green-700 font-body text-xs font-bold">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      {uploadSuccess}
+                    </div>
+                  )}
+                  {avatarPreview && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        onClick={handleAvatarUpload}
+                        disabled={isUploadingAvatar}
+                        className="flex items-center gap-1.5 py-1 px-3 text-xs flex-1"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        {isUploadingAvatar ? "Mengunggah..." : "Simpan Foto"}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setAvatarPreview(null);
+                          if (avatarInputRef.current) avatarInputRef.current.value = "";
+                          setUploadError(null);
+                        }}
+                        disabled={isUploadingAvatar}
+                        className="flex items-center gap-1 py-1 px-2 text-xs"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 flex justify-center sm:justify-start">
                 <Button
                   variant="primary"
                   onClick={() => setIsEditModalOpen(true)}
@@ -290,13 +420,15 @@ export default function ProfilePage() {
         title="Ubah Profil Saya"
       >
         {formError && (
-          <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-5 font-body font-bold text-xs uppercase text-nb-red animate-shake">
-            ⚠️ {formError}
+          <div className="flex items-center gap-2 bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-5 font-body font-bold text-xs uppercase text-nb-red animate-shake">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {formError}
           </div>
         )}
         {formSuccess && (
-          <div className="bg-nb-green/10 border-nb-2 border-nb-green p-4 mb-5 font-body font-bold text-xs uppercase text-nb-green">
-            ✅ {formSuccess}
+          <div className="flex items-center gap-2 bg-nb-green/10 border-nb-2 border-nb-green p-4 mb-5 font-body font-bold text-xs uppercase text-nb-green">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            {formSuccess}
           </div>
         )}
 
@@ -349,14 +481,14 @@ export default function ProfilePage() {
             disabled={formSubmitting}
           />
 
-          <Input
-            id="profile-avatar"
-            label="URL Foto Profil"
-            placeholder="Masukkan URL Foto Profil"
-            value={formAvatarUrl}
-            onChange={(e) => setFormAvatarUrl(e.target.value)}
-            disabled={formSubmitting}
-          />
+          <div className="flex flex-col gap-2">
+            <label className="font-body font-bold text-sm tracking-wide text-nb-ink uppercase">
+              Foto Profil
+            </label>
+            <p className="font-body text-xs text-nb-ink/60">
+              Klik ikon kamera di foto profil untuk mengganti foto langsung dari galeri Anda.
+            </p>
+          </div>
 
           <Input
             id="profile-password"

@@ -14,7 +14,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Skeleton from "@/components/ui/Skeleton";
 import { Task } from "@/components/tasks/TaskCard";
-import { ClipboardList, Hourglass, CheckCircle2, Plus } from "lucide-react";
+import { ClipboardList, Hourglass, CheckCircle2, Plus, AlertTriangle } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, token, logout } = useAuth();
@@ -374,7 +374,7 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="font-display font-black text-3xl md:text-4xl text-nb-ink uppercase tracking-wider leading-none mb-2">
-                Halo, {user?.username || "Pengguna"}! 👋
+                Halo, {user?.username || "Pengguna"}!
               </h1>
               <p className="font-body text-sm md:text-base text-nb-ink/70">
                 Kamu memiliki <strong className="text-nb-ink font-bold">{stats.active} tugas aktif</strong> yang sedang berjalan.
@@ -432,11 +432,14 @@ export default function DashboardPage() {
               <Skeleton variant="rect" className="h-44" />
             </div>
           ) : error ? (
-            <div className="bg-nb-red/10 border-nb-2 border-nb-red p-6 text-center text-nb-red font-bold uppercase tracking-wider text-sm shadow-nb">
-              ⚠️ {error}
+            <div className="bg-nb-red/10 border-nb-2 border-nb-red p-6 text-center text-nb-red font-bold uppercase tracking-wider text-sm shadow-nb flex flex-col items-center justify-center gap-3">
+              <span className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                {error}
+              </span>
               <button
                 onClick={fetchTasks}
-                className="block mx-auto mt-4 px-4 py-2 border-nb-2 bg-nb-surface text-nb-ink text-xs cursor-pointer"
+                className="block mx-auto mt-2 px-4 py-2 border-nb-2 bg-nb-surface text-nb-ink text-xs cursor-pointer"
               >
                 Coba Lagi
               </button>
@@ -468,8 +471,9 @@ export default function DashboardPage() {
         title={editingTask ? "Ubah Tugas" : "Tambah Tugas Baru"}
       >
         {formError && (
-          <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-5 font-body font-bold text-xs uppercase text-nb-red">
-            ⚠️ {formError}
+          <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-5 font-body font-bold text-xs uppercase text-nb-red flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {formError}
           </div>
         )}
 
@@ -526,9 +530,9 @@ export default function DashboardPage() {
                 disabled={formSubmitting}
                 className="w-full bg-nb-surface text-nb-ink border-nb px-4 h-12 text-base font-body focus:outline-none focus:border-nb-blue transition-colors cursor-pointer"
               >
-                <option value="high">🔴 Tinggi (High)</option>
-                <option value="medium">🟡 Sedang (Medium)</option>
-                <option value="low">🟢 Rendah (Low)</option>
+                <option value="high">Tinggi (High)</option>
+                <option value="medium">Sedang (Medium)</option>
+                <option value="low">Rendah (Low)</option>
               </select>
             </div>
           </div>
@@ -558,9 +562,9 @@ export default function DashboardPage() {
                 disabled={formSubmitting}
                 className="w-full bg-nb-surface text-nb-ink border-nb px-4 h-12 text-base font-body focus:outline-none focus:border-nb-blue transition-colors cursor-pointer"
               >
-                <option value="todo">🔘 Belum Dimulai</option>
-                <option value="inprogress">🔵 Sedang Dikerjakan</option>
-                <option value="done">🟢 Selesai</option>
+                <option value="todo">Belum Dimulai</option>
+                <option value="inprogress">Sedang Dikerjakan</option>
+                <option value="done">Selesai</option>
               </select>
             </div>
           </div>

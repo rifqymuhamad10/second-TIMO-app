@@ -103,10 +103,10 @@ export default function FilterBar({
           onChange={(e) => setSortBy(e.target.value)}
           className="bg-nb-bg text-nb-ink border-nb-2 border-l-0 -ml-2.5 px-4 h-full text-xs font-bold uppercase tracking-wider focus:outline-none cursor-pointer focus:border-nb-blue"
         >
-          <option value="deadline-asc">📅 Tenggat Terdekat</option>
-          <option value="deadline-desc">📅 Tenggat Terjauh</option>
-          <option value="created-desc">🆕 Terbaru Dibuat</option>
-          <option value="created-asc">⏳ Terlama Dibuat</option>
+          <option value="deadline-asc">Tenggat Terdekat</option>
+          <option value="deadline-desc">Tenggat Terjauh</option>
+          <option value="created-desc">Terbaru Dibuat</option>
+          <option value="created-asc">Terlama Dibuat</option>
         </select>
       </div>
     </div>
