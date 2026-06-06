@@ -56,6 +56,18 @@ export const mockDb = {
     writeDb(db);
     return newUser;
   },
+  updateUserById: async (id: number, userData: any) => {
+    const db = readDb();
+    const idx = db.users.findIndex((u: any) => Number(u.id) === Number(id));
+    if (idx === -1) throw new Error('User not found');
+    db.users[idx] = {
+      ...db.users[idx],
+      ...userData,
+      updated_at: new Date().toISOString()
+    };
+    writeDb(db);
+    return db.users[idx];
+  },
 
   insertSession: async (sessionData: { token: string; user_id: number }) => {
     const db = readDb();

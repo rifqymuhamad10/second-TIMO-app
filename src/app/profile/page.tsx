@@ -7,14 +7,89 @@ import MobileNav from "@/components/layout/MobileNav";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import { Task } from "@/components/tasks/TaskCard";
-import { User, Mail, Award, BookOpen, LogOut, ArrowLeft } from "lucide-react";
-import Link from "next/navigation";
+import { User, Mail, Award, BookOpen, LogOut, ArrowLeft, Edit2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import PomodoroStats from "@/components/pomodoro/PomodoroStats";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
 
 export default function ProfilePage() {
-  const { user, logout, token } = useAuth();
+  const { user, logout, token, refreshUser } = useAuth();
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+
+  // Edit Profile States
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [formUsername, setFormUsername] = useState("");
+  const [formRole, setFormRole] = useState("user");
+  const [formMajor, setFormMajor] = useState("");
+  const [formAvatarUrl, setFormAvatarUrl] = useState("");
+  const [formPassword, setFormPassword] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // Initialize form fields when user data is loaded
+  useEffect(() => {
+    if (user) {
+      setFormUsername(user.username || "");
+      setFormRole(user.role || "user");
+      setFormMajor(user.major || "Rekayasa Perangkat Lunak (RPL)");
+      setFormAvatarUrl(user.avatar_url || "");
+    }
+  }, [user, isEditModalOpen]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setFormSuccess(null);
+    setFormSubmitting(true);
+
+    try {
+      const activeToken = token || localStorage.getItem("token");
+      
+      const payload: any = {
+        username: formUsername,
+        role: formRole,
+        major: formMajor,
+        avatar_url: formAvatarUrl,
+      };
+
+      if (formPassword.trim()) {
+        if (formPassword.length < 6) {
+          throw new Error("Password minimal 6 karakter");
+        }
+        payload.password = formPassword;
+      }
+
+      const res = await fetch("/api/users/current", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${activeToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.message || "Gagal memperbarui profil");
+      }
+
+      await refreshUser();
+      setFormSuccess("Profil berhasil diperbarui!");
+      setFormPassword(""); // reset password input
+      setTimeout(() => {
+        setIsEditModalOpen(false);
+        setFormSuccess(null);
+      }, 1500);
+    } catch (err: any) {
+      setFormError(err.message || "Terjadi kesalahan");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
 
   // Ambil data tugas untuk kalkulasi statistik
   useEffect(() => {
@@ -75,33 +150,48 @@ export default function ProfilePage() {
         <div className="flex flex-col gap-8">
           {/* Card 1: Profil Utama */}
           <section className="bg-nb-surface border-nb shadow-nb-lg p-6 md:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            {/* Avatar Kotak Kuning */}
-            <div className="w-24 h-24 sm:w-28 sm:h-28 bg-nb-yellow border-nb shadow-nb flex items-center justify-center font-display font-black text-4xl md:text-5xl text-nb-ink select-none flex-shrink-0">
-              {user?.username?.charAt(0).toUpperCase() || "U"}
+            {/* Avatar Kotak Kuning / Image */}
+            <div className="w-24 h-24 sm:w-28 sm:h-28 bg-nb-yellow border-nb shadow-nb flex items-center justify-center font-display font-black text-4xl md:text-5xl text-nb-ink select-none flex-shrink-0 overflow-hidden relative">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="Profile Photo" className="w-full h-full object-cover" />
+              ) : (
+                user?.username?.charAt(0).toUpperCase() || "U"
+              )}
             </div>
 
             {/* Detail Profil */}
             <div className="flex-grow text-center sm:text-left">
-              <h2 className="font-display font-black text-2xl uppercase tracking-wider text-nb-ink mb-1">
+              <h2 className="font-display font-black text-2xl uppercase tracking-wider text-nb-ink mb-1 break-words">
                 {user?.username || "Nama Pengguna"}
               </h2>
               <p className="font-body text-sm font-bold uppercase tracking-wider text-nb-ink/50 mb-4">
-                Mahasiswa • Universitas UIN SGD Bandung
+                {user?.role === "dosen" ? "Dosen" : "Mahasiswa"} • Universitas UIN SGD Bandung
               </p>
 
               <div className="flex flex-col gap-2.5 max-w-sm mx-auto sm:mx-0">
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
                   <Mail className="w-4 h-4 text-nb-ink/60" />
-                  <span>{user?.email || "email@mahasiswa.ac.id"}</span>
+                  <span className="break-all">{user?.email || "email@mahasiswa.ac.id"}</span>
                 </div>
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
                   <Award className="w-4 h-4 text-nb-ink/60" />
-                  <span>Peran: <strong className="font-bold text-nb-ink">{user?.role === "user" ? "Mahasiswa" : user?.role}</strong></span>
+                  <span>Peran: <strong className="font-bold text-nb-ink">{user?.role === "dosen" ? "Dosen" : "Mahasiswa"}</strong></span>
                 </div>
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
                   <BookOpen className="w-4 h-4 text-nb-ink/60" />
-                  <span>Jurusan: Rekayasa Perangkat Lunak (RPL)</span>
+                  <span className="break-words">Jurusan: {user?.major || "Rekayasa Perangkat Lunak (RPL)"}</span>
                 </div>
+              </div>
+
+              <div className="mt-5 flex justify-center sm:justify-start">
+                <Button
+                  variant="primary"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="flex items-center gap-1.5 py-1 px-3 text-xs"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  Edit Profil
+                </Button>
               </div>
             </div>
           </section>
@@ -179,9 +269,100 @@ export default function ProfilePage() {
 
       {/* Navigasi Mobile (Agar tetap konsisten di mobile) */}
       <MobileNav
-        onOpenSidebar={() => {}}
-        onOpenAddTask={() => {}}
+        onOpenSidebar={() => router.push("/dashboard?action=openSidebar")}
+        onOpenAddTask={() => router.push("/dashboard?action=addTask")}
       />
+
+      {/* Modal Edit Profil */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Ubah Profil Saya"
+      >
+        {formError && (
+          <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-5 font-body font-bold text-xs uppercase text-nb-red animate-shake">
+            ⚠️ {formError}
+          </div>
+        )}
+        {formSuccess && (
+          <div className="bg-nb-green/10 border-nb-2 border-nb-green p-4 mb-5 font-body font-bold text-xs uppercase text-nb-green">
+            ✅ {formSuccess}
+          </div>
+        )}
+
+        <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
+          <Input
+            id="profile-username"
+            label="Nama Lengkap / Username *"
+            placeholder="Masukkan nama baru..."
+            value={formUsername}
+            onChange={(e) => setFormUsername(e.target.value)}
+            disabled={formSubmitting}
+            required
+          />
+
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="profile-role"
+              className="font-body font-bold text-sm tracking-wide text-nb-ink uppercase"
+            >
+              Peran (Role) *
+            </label>
+            <select
+              id="profile-role"
+              value={formRole}
+              onChange={(e) => setFormRole(e.target.value)}
+              disabled={formSubmitting}
+              className="w-full bg-nb-surface text-nb-ink border-nb px-4 h-12 text-base font-body focus:outline-none focus:border-nb-blue transition-colors cursor-pointer"
+            >
+              <option value="user">Mahasiswa</option>
+              <option value="dosen">Dosen</option>
+            </select>
+          </div>
+
+          <Input
+            id="profile-major"
+            label="Jurusan / Departemen"
+            placeholder="Contoh: Rekayasa Perangkat Lunak (RPL)"
+            value={formMajor}
+            onChange={(e) => setFormMajor(e.target.value)}
+            disabled={formSubmitting}
+          />
+
+          <Input
+            id="profile-avatar"
+            label="URL Foto Profil"
+            placeholder="Contoh: https://api.dicebear.com/7.x/pixel-art/svg"
+            value={formAvatarUrl}
+            onChange={(e) => setFormAvatarUrl(e.target.value)}
+            disabled={formSubmitting}
+          />
+
+          <Input
+            id="profile-password"
+            label="Password Baru"
+            type="password"
+            placeholder="Kosongkan jika tidak ingin mengubah password"
+            value={formPassword}
+            onChange={(e) => setFormPassword(e.target.value)}
+            disabled={formSubmitting}
+          />
+
+          <div className="flex justify-end gap-3 border-t-3 border-nb-ink/10 pt-5 mt-3">
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              disabled={formSubmitting}
+            >
+              Batal
+            </Button>
+            <Button variant="primary" type="submit" disabled={formSubmitting}>
+              {formSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
