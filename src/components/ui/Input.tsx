@@ -1,4 +1,5 @@
 import React, { forwardRef } from "react";
+import { AlertTriangle } from "lucide-react";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -28,7 +29,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         />
         {error && (
           <p className="text-xs font-bold text-nb-red flex items-center gap-1 mt-0.5" role="alert">
-            ⚠️ {error}
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>{error}</span>
           </p>
         )}
       </div>

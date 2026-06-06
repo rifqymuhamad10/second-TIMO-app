@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Edit3, Trash2, CheckCircle2, Circle, Users } from "lucide-react";
+import { Calendar, Edit3, Trash2, CheckCircle2, Circle, Users, Flame, Timer } from "lucide-react";
 import Badge from "../ui/Badge";
 import { getSubjectColor } from "@/lib/colors";
 import DeadlineCountdown from "./DeadlineCountdown";
@@ -126,11 +126,11 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus, onUpd
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
       case "high":
-        return "🔴 Tinggi";
+        return "Tinggi";
       case "medium":
-        return "🟡 Sedang";
+        return "Sedang";
       case "low":
-        return "🟢 Rendah";
+        return "Rendah";
       default:
         return priority;
     }
@@ -198,9 +198,10 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus, onUpd
       {/* Bawah: Deadline & Aksi */}
       <div className="border-t-2 border-nb-ink/10 pt-4 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3 flex-wrap">
-          {task.pomodoro_count !== undefined && (
+          {task.pomodoro_count !== undefined && task.pomodoro_count > 0 && (
             <span className="font-mono font-bold text-xs text-nb-ink flex items-center gap-1" title="Jumlah sesi Pomodoro selesai">
-              🍅 ×{task.pomodoro_count}
+              <Flame className="w-3.5 h-3.5 text-nb-red fill-nb-red" />
+              <span>×{task.pomodoro_count}</span>
             </span>
           )}
           <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-nb-ink/70">
@@ -214,18 +215,20 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus, onUpd
           {isTimerActive ? (
             <button
               onClick={() => window.location.href = "/pomodoro"}
-              className="px-2.5 py-2 border-nb-2 bg-nb-red text-white hover:bg-red-600 font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              className="px-2.5 py-2 border-nb-2 bg-nb-red text-white hover:bg-red-600 font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
               title="Timer Pomodoro sedang berjalan"
             >
-              <span>⏱ Aktif</span>
+              <Timer className="w-3.5 h-3.5 animate-spin" />
+              <span>Aktif</span>
             </button>
           ) : (
             <button
               onClick={startPomodoroForTask}
-              className="px-2.5 py-2 border-nb-2 bg-nb-surface text-nb-ink hover:bg-nb-yellow font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              className="px-2.5 py-2 border-nb-2 bg-nb-surface text-nb-ink hover:bg-nb-yellow font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
               title="Mulai Sesi Pomodoro untuk tugas ini"
             >
-              <span>🍅 Fokus</span>
+              <Flame className="w-3.5 h-3.5" />
+              <span>Fokus</span>
             </button>
           )}
 

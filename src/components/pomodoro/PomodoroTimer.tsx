@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import PomodoroRing from "./PomodoroRing";
 import Button from "../ui/Button";
-import { Play, Pause, RotateCcw, Settings, Check, Volume2, AlertCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Settings, Check, Volume2, AlertCircle, Flame, Coffee } from "lucide-react";
 
 interface PomodoroSettings {
   focusDuration: number;
@@ -290,7 +290,7 @@ export default function PomodoroTimer({ onSessionTypeChange }: PomodoroTimerProp
       const newCount = focusSessionCount + 1;
       setFocusSessionCount(newCount);
       
-      showNotification("Sesi Fokus Selesai! 🍅", "Hebat! Waktunya istirahat sejenak.");
+      showNotification("Sesi Fokus Selesai!", "Hebat! Waktunya istirahat sejenak.");
       
       // Simpan sesi fokus ke database
       await saveSessionToDb("focus", settings.focusDuration, completedTaskId);
@@ -304,7 +304,7 @@ export default function PomodoroTimer({ onSessionTypeChange }: PomodoroTimerProp
         setTimeLeft(settings.shortBreakDuration * 60);
       }
     } else {
-      showNotification("Waktu Istirahat Selesai! ⏱", "Mari kembali fokus mengerjakan tugas.");
+      showNotification("Waktu Istirahat Selesai!", "Mari kembali fokus mengerjakan tugas.");
       setSessionType("focus");
       setTimeLeft(settings.focusDuration * 60);
     }
@@ -433,8 +433,18 @@ export default function PomodoroTimer({ onSessionTypeChange }: PomodoroTimerProp
 
       {/* Sesi status & Badge sesi */}
       <div className="flex flex-col items-center gap-2 mb-6">
-        <span className="font-display font-black text-xl md:text-2xl uppercase tracking-widest text-nb-ink border-b-3 border-nb-ink pb-1">
-          {sessionType === "focus" ? "🍅 SESI FOKUS" : "☕ SESI ISTIRAHAT"}
+        <span className="font-display font-black text-xl md:text-2xl uppercase tracking-widest text-nb-ink border-b-3 border-nb-ink pb-1 flex items-center gap-2">
+          {sessionType === "focus" ? (
+            <>
+              <Flame className="w-5 h-5 text-nb-red fill-nb-red" />
+              <span>Sesi Fokus</span>
+            </>
+          ) : (
+            <>
+              <Coffee className="w-5 h-5 text-nb-blue fill-nb-blue/20" />
+              <span>Sesi Istirahat</span>
+            </>
+          )}
         </span>
         <span className="font-mono text-xs font-bold text-nb-ink/65 uppercase tracking-wider">
           Sesi fokus selesai hari ini: {focusSessionCount}
