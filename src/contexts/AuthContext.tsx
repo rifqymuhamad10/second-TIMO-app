@@ -89,6 +89,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server tidak mengembalikan respons JSON. Harap periksa apakah server berjalan dan konfigurasi database/Supabase di `.env.local` sudah benar.");
+      }
+
       const result = await res.json();
 
       if (!res.ok) {

@@ -1,11 +1,11 @@
 import { getCurrentUser } from "./users-service";
 import {
   findTasksByUserId,
-  findTaskByIdAndUserId,
   insertTask,
-  updateTask,
-  deleteTask,
+  updateTaskById,
+  deleteTaskById,
 } from "@/models/tasks-model";
+import { findTaskMember } from "@/models/task-members-model";
 import { getPomodoroSessionCountsPerTask } from "@/models/pomodoro-model";
 
 export async function getTasksForUser(token: string) {
@@ -35,7 +35,7 @@ export async function createTaskForUser(token: string, payload: any) {
     throw new Error("unauthorized");
   }
 
-  const { title, description, priority, status, subject, deadline } = payload;
+  const { title, description, priority, status, subject, deadline, is_group } = payload;
 
   if (!title || !subject || !deadline) {
     throw new Error("Missing required fields (title, subject, deadline)");
@@ -52,6 +52,7 @@ export async function createTaskForUser(token: string, payload: any) {
     status: validStatuses.includes(status) ? status : "todo",
     subject,
     deadline,
+    is_group: is_group || false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -65,9 +66,9 @@ export async function updateTaskForUser(token: string, id: number, payload: any)
     throw new Error("unauthorized");
   }
 
-  // Cek apakah task milik user ini
-  const existingTask = await findTaskByIdAndUserId(id, user.id);
-  if (!existingTask) {
+  // Check membership — both owner and member can edit
+  const membership = await findTaskMember(id, user.id);
+  if (!membership) {
     throw new Error("Task not found or forbidden");
   }
 
@@ -92,7 +93,7 @@ export async function updateTaskForUser(token: string, id: number, payload: any)
     updatedData.status = status;
   }
 
-  return await updateTask(id, user.id, updatedData);
+  return await updateTaskById(id, updatedData);
 }
 
 export async function deleteTaskForUser(token: string, id: number) {
@@ -101,11 +102,15 @@ export async function deleteTaskForUser(token: string, id: number) {
     throw new Error("unauthorized");
   }
 
-  // Cek apakah task milik user ini
-  const existingTask = await findTaskByIdAndUserId(id, user.id);
-  if (!existingTask) {
+  // Only the owner can delete the task
+  const membership = await findTaskMember(id, user.id);
+  if (!membership) {
     throw new Error("Task not found or forbidden");
   }
 
-  return await deleteTask(id, user.id);
+  if (membership.role !== "owner") {
+    throw new Error("Hanya pemilik tugas yang bisa menghapus tugas ini");
+  }
+
+  return await deleteTaskById(id);
 }

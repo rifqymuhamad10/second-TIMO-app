@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [taskTypeFilter, setTaskTypeFilter] = useState("all"); // "all", "individual", "group"
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("deadline-asc");
 
@@ -48,6 +49,7 @@ export default function DashboardPage() {
   const [formPriority, setFormPriority] = useState<"high" | "medium" | "low">("medium");
   const [formStatus, setFormStatus] = useState<"todo" | "inprogress" | "done">("todo");
   const [formDeadline, setFormDeadline] = useState("");
+  const [formIsGroup, setFormIsGroup] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
@@ -138,6 +140,13 @@ export default function DashboardPage() {
       result = result.filter((t) => t.priority === priorityFilter);
     }
 
+    // Filter Tipe Tugas
+    if (taskTypeFilter === "individual") {
+      result = result.filter((t) => !t.is_group);
+    } else if (taskTypeFilter === "group") {
+      result = result.filter((t) => t.is_group);
+    }
+
     // Filter Mata Kuliah
     if (selectedSubjects.length > 0) {
       result = result.filter((t) => selectedSubjects.includes(t.subject));
@@ -161,7 +170,7 @@ export default function DashboardPage() {
     });
 
     return result;
-  }, [tasks, searchQuery, statusFilter, priorityFilter, selectedSubjects, sortBy]);
+  }, [tasks, searchQuery, statusFilter, priorityFilter, taskTypeFilter, selectedSubjects, sortBy]);
 
   // Buka modal untuk tugas baru
   const handleNewTaskClick = () => {
@@ -171,6 +180,7 @@ export default function DashboardPage() {
     setFormSubject("");
     setFormPriority("medium");
     setFormStatus("todo");
+    setFormIsGroup(false);
     
     // Set default deadline ke besok
     const tomorrow = new Date();
@@ -189,6 +199,7 @@ export default function DashboardPage() {
     setFormSubject(task.subject);
     setFormPriority(task.priority);
     setFormStatus(task.status);
+    setFormIsGroup(task.is_group);
     
     // Format deadline YYYY-MM-DD
     try {
@@ -224,6 +235,7 @@ export default function DashboardPage() {
         priority: formPriority,
         status: formStatus,
         deadline: formDeadline,
+        is_group: formIsGroup,
       };
 
       const res = await fetch(url, {
@@ -335,6 +347,8 @@ export default function DashboardPage() {
           setStatus={setStatusFilter}
           priority={priorityFilter}
           setPriority={setPriorityFilter}
+          taskType={taskTypeFilter}
+          setTaskType={setTaskTypeFilter}
           selectedSubjects={selectedSubjects}
           toggleSubject={toggleSubject}
           availableSubjects={availableSubjects}
@@ -392,6 +406,8 @@ export default function DashboardPage() {
             setSortBy={setSortBy}
             status={statusFilter}
             setStatus={setStatusFilter}
+            taskType={taskTypeFilter}
+            setTaskType={setTaskTypeFilter}
           />
 
           {/* List Tugas */}
@@ -419,6 +435,7 @@ export default function DashboardPage() {
               onEdit={handleEditClick}
               onDelete={handleDeleteClick}
               onToggleStatus={handleToggleStatus}
+              onUpdateMembers={fetchTasks}
             />
           )}
         </main>
@@ -532,6 +549,20 @@ export default function DashboardPage() {
                 <option value="done">🟢 Selesai</option>
               </select>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="task-is-group"
+              checked={formIsGroup}
+              onChange={(e) => setFormIsGroup(e.target.checked)}
+              disabled={formSubmitting || !!editingTask}
+              className="w-4 h-4 text-nb-yellow bg-nb-surface border-nb-2 focus:ring-nb-yellow focus:ring-2"
+            />
+            <label htmlFor="task-is-group" className="font-body font-bold text-sm text-nb-ink">
+              Jadikan Tugas Kelompok (Anda bisa mengundang anggota setelah dibuat)
+            </label>
           </div>
 
           <div className="flex justify-end gap-3 border-t-3 border-nb-ink/10 pt-5 mt-3">

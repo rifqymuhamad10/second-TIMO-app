@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Edit3, Trash2, CheckCircle2, Circle } from "lucide-react";
+import { Calendar, Edit3, Trash2, CheckCircle2, Circle, Users } from "lucide-react";
 import Badge from "../ui/Badge";
 import { getSubjectColor } from "@/lib/colors";
 import DeadlineCountdown from "./DeadlineCountdown";
+import CollaboratorList, { TaskMember } from "./CollaboratorList";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Task {
   id: number;
@@ -15,9 +17,11 @@ export interface Task {
   status: "todo" | "inprogress" | "done";
   subject: string;
   deadline: string;
+  is_group: boolean;
   created_at: string;
   updated_at: string;
   pomodoro_count?: number;
+  task_members?: TaskMember[];
 }
 
 interface TaskCardProps {
@@ -25,9 +29,12 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
   onToggleStatus: (task: Task) => void;
+  onUpdateMembers?: () => void;
 }
 
-export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: TaskCardProps) {
+export default function TaskCard({ task, onEdit, onDelete, onToggleStatus, onUpdateMembers }: TaskCardProps) {
+  const { user, token } = useAuth();
+  const [showMembers, setShowMembers] = React.useState(false);
   // Tentukan warna latar berdasarkan status dan mata kuliah
   const subColor = getSubjectColor(task.subject);
 
@@ -148,7 +155,16 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
     >
       {/* Atas: Badge Prioritas & Status */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <Badge variant={task.priority}>{getPriorityLabel(task.priority)}</Badge>
+        <div className="flex gap-2 items-center">
+          <Badge variant={task.priority}>{getPriorityLabel(task.priority)}</Badge>
+          {task.is_group && (
+            <Badge variant="low">
+              <span className="flex items-center gap-1">
+                <Users className="w-3 h-3" /> Kelompok
+              </span>
+            </Badge>
+          )}
+        </div>
 
         <button
           onClick={() => onToggleStatus(task)}
@@ -213,6 +229,17 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
             </button>
           )}
 
+          {/* Tombol Toggle Members (jika grup) */}
+          {task.is_group && (
+            <button
+              onClick={() => setShowMembers(!showMembers)}
+              className="p-2 border-nb-2 bg-nb-surface text-nb-ink hover:bg-nb-yellow active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              title="Lihat Anggota"
+            >
+              <Users className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Tombol Edit */}
           <button
             onClick={() => onEdit(task)}
@@ -232,6 +259,46 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
           </button>
         </div>
       </div>
+
+      {/* Collaborator List (Expanded) */}
+      {showMembers && task.is_group && user && task.task_members && (
+        <CollaboratorList
+          taskId={task.id}
+          members={task.task_members}
+          currentUserId={user.id}
+          isOwner={task.task_members.some((m) => m.user_id === user.id && m.role === "owner")}
+          onAddMember={async (email) => {
+            const activeToken = token || localStorage.getItem("token");
+            const res = await fetch(`/api/tasks/${task.id}/members`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${activeToken}`,
+              },
+              body: JSON.stringify({ email }),
+            });
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.message);
+            }
+            if (onUpdateMembers) onUpdateMembers();
+          }}
+          onRemoveMember={async (userId) => {
+            const activeToken = token || localStorage.getItem("token");
+            const res = await fetch(`/api/tasks/${task.id}/members/${userId}`, {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${activeToken}`,
+              },
+            });
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.message);
+            }
+            if (onUpdateMembers) onUpdateMembers();
+          }}
+        />
+      )}
     </div>
   );
 }
