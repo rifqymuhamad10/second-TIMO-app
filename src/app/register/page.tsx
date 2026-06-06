@@ -14,6 +14,9 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("mahasiswa");
+  const [institution, setInstitution] = useState("");
+  const [major, setMajor] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,7 +25,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    if (!username || !email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword || !role || !institution || !major) {
       setError("Semua field wajib diisi");
       return;
     }
@@ -34,7 +37,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(username, email, password);
+      await register(username, email, password, role, institution, major);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || "Gagal mendaftar. Pastikan email belum terdaftar.");
@@ -141,9 +144,52 @@ export default function RegisterPage() {
                   id="register-email"
                   label="Email *"
                   type="email"
-                  placeholder="rifqy@mahasiswa.ac.id"
+                  placeholder="Alamat Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="register-role"
+                    className="font-body font-bold text-sm tracking-wide text-nb-ink uppercase"
+                  >
+                    Status / Peran *
+                  </label>
+                  <select
+                    id="register-role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    disabled={loading}
+                    className="w-full bg-nb-surface text-nb-ink border-nb px-4 h-12 text-base font-body focus:outline-none focus:border-nb-blue transition-colors cursor-pointer"
+                    required
+                  >
+                    <option value="mahasiswa">Mahasiswa</option>
+                    <option value="pelajar">Pelajar</option>
+                    <option value="umum">Umum</option>
+                  </select>
+                </div>
+
+                <Input
+                  id="register-institution"
+                  label="Sekolah / Kampus *"
+                  type="text"
+                  placeholder="Sekolah / Kampus"
+                  value={institution}
+                  onChange={(e) => setInstitution(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+
+                <Input
+                  id="register-major"
+                  label="Jurusan / Kelas *"
+                  type="text"
+                  placeholder="Jurusan / Kelas"
+                  value={major}
+                  onChange={(e) => setMajor(e.target.value)}
                   disabled={loading}
                   required
                 />

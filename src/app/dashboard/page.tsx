@@ -477,7 +477,7 @@ export default function DashboardPage() {
           <Input
             id="task-title"
             label="Judul Tugas *"
-            placeholder="Contoh: Buat ERD Sistem Retail"
+            placeholder="Judul Tugas"
             value={formTitle}
             onChange={(e) => setFormTitle(e.target.value)}
             disabled={formSubmitting}
@@ -505,7 +505,7 @@ export default function DashboardPage() {
             <Input
               id="task-subject"
               label="Mata Kuliah *"
-              placeholder="Contoh: RPL, Basis Data"
+              placeholder="Mata Kuliah"
               value={formSubject}
               onChange={(e) => setFormSubject(e.target.value)}
               disabled={formSubmitting}
