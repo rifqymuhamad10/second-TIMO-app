@@ -1,6 +1,11 @@
 import { supabase } from "@/lib/supabaseClient";
+import { isMockEnabled, mockDb } from "@/lib/mockDb";
 
 export async function findTasksByUserId(userId: number) {
+  if (isMockEnabled) {
+    return mockDb.findTasksByUserId(userId);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
@@ -15,6 +20,10 @@ export async function findTasksByUserId(userId: number) {
 }
 
 export async function findTaskByIdAndUserId(id: number, userId: number) {
+  if (isMockEnabled) {
+    return mockDb.findTaskByIdAndUserId(id, userId);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
@@ -30,6 +39,10 @@ export async function findTaskByIdAndUserId(id: number, userId: number) {
 }
 
 export async function insertTask(taskData: any) {
+  if (isMockEnabled) {
+    return mockDb.insertTask(taskData);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .insert([taskData])
@@ -44,6 +57,10 @@ export async function insertTask(taskData: any) {
 }
 
 export async function updateTask(id: number, userId: number, taskData: any) {
+  if (isMockEnabled) {
+    return mockDb.updateTask(id, userId, taskData);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .update(taskData)
@@ -60,6 +77,10 @@ export async function updateTask(id: number, userId: number, taskData: any) {
 }
 
 export async function deleteTask(id: number, userId: number) {
+  if (isMockEnabled) {
+    return mockDb.deleteTask(id, userId);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .delete()
@@ -74,3 +95,4 @@ export async function deleteTask(id: number, userId: number) {
 
   return data;
 }
+

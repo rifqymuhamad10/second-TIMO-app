@@ -1,6 +1,11 @@
 import { supabase } from "@/lib/supabaseClient";
+import { isMockEnabled, mockDb } from "@/lib/mockDb";
 
 export async function insertSession(sessionData: { token: string; user_id: number }) {
+  if (isMockEnabled) {
+    return mockDb.insertSession(sessionData);
+  }
+
   const { data, error } = await supabase
     .from("sessions")
     .insert([
@@ -22,6 +27,10 @@ export async function insertSession(sessionData: { token: string; user_id: numbe
 }
 
 export async function findSessionByToken(token: string) {
+  if (isMockEnabled) {
+    return mockDb.findSessionByToken(token);
+  }
+
   const { data, error } = await supabase
     .from("sessions")
     .select("*")
@@ -36,6 +45,10 @@ export async function findSessionByToken(token: string) {
 }
 
 export async function deleteSessionByToken(token: string) {
+  if (isMockEnabled) {
+    return mockDb.deleteSessionByToken(token);
+  }
+
   const { data, error } = await supabase
     .from("sessions")
     .delete()
@@ -49,4 +62,5 @@ export async function deleteSessionByToken(token: string) {
 
   return data;
 }
+
 
