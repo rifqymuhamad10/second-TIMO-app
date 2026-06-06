@@ -130,7 +130,7 @@ export default function RegisterPage() {
                   id="register-username"
                   label="Nama Lengkap *"
                   type="text"
-                  placeholder="Rifqy Muhammad"
+                  placeholder="Nama Lengkap"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={loading}

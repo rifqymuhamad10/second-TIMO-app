@@ -5,9 +5,11 @@ import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import PomodoroTimer from "@/components/pomodoro/PomodoroTimer";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function PomodoroPage() {
   const [sessionType, setSessionType] = useState<"focus" | "break">("focus");
+  const router = useRouter();
 
   const bgColor = sessionType === "focus" ? "bg-nb-yellow" : "bg-nb-green";
 
@@ -35,8 +37,8 @@ export default function PomodoroPage() {
 
       {/* Navigasi Mobile */}
       <MobileNav
-        onOpenSidebar={() => {}}
-        onOpenAddTask={() => {}}
+        onOpenSidebar={() => router.push("/dashboard?action=openSidebar")}
+        onOpenAddTask={() => router.push("/dashboard?action=addTask")}
       />
     </div>
   );

@@ -9,6 +9,8 @@ interface User {
   email: string;
   role: string;
   created_at: string;
+  major?: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {

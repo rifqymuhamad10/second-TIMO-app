@@ -55,3 +55,22 @@ export async function findUserById(id: number) {
   return data;
 }
 
+export async function updateUserById(id: number, userData: any) {
+  if (isMockEnabled) {
+    return mockDb.updateUserById(id, userData);
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .update(userData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+

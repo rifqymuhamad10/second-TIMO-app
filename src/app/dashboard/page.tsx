@@ -92,6 +92,20 @@ export default function DashboardPage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get("action");
+      if (action === "addTask") {
+        handleNewTaskClick();
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (action === "openSidebar") {
+        setSidebarOpen(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   // List mata kuliah unik untuk filter di sidebar
   const availableSubjects = useMemo(() => {
     const subs = tasks.map((t) => t.subject).filter(Boolean);
