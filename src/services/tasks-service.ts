@@ -74,9 +74,12 @@ export async function updateTaskForUser(token: string, id: number, payload: any)
     throw new Error("Task not found or forbidden");
   }
 
+  // Check if owner by user_id first (fallback for legacy tasks)
+  const isCreator = existingTask.user_id === user.id;
+
   // Check membership — both owner and member can edit
   const membership = await findTaskMember(id, user.id);
-  if (!membership) {
+  if (!isCreator && !membership) {
     throw new Error("Task not found or forbidden");
   }
 
@@ -130,14 +133,24 @@ export async function deleteTaskForUser(token: string, id: number) {
     throw new Error("unauthorized");
   }
 
-  // Only the owner can delete the task
-  const membership = await findTaskMember(id, user.id);
-  if (!membership) {
+  const task = await findTaskById(id);
+  if (!task) {
     throw new Error("Task not found or forbidden");
   }
 
-  if (membership.role !== "owner") {
-    throw new Error("Hanya pemilik tugas yang bisa menghapus tugas ini");
+  // Check if owner by user_id first (fallback for legacy tasks)
+  const isCreator = task.user_id === user.id;
+
+  // Check membership
+  const membership = await findTaskMember(id, user.id);
+  
+  if (!isCreator) {
+    if (!membership) {
+      throw new Error("Task not found or forbidden");
+    }
+    if (membership.role !== "owner") {
+      throw new Error("Hanya pemilik tugas yang bisa menghapus tugas ini");
+    }
   }
 
   return await deleteTaskById(id);

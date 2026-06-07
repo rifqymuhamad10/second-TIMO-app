@@ -42,6 +42,10 @@ export async function findTasksByUserId(userId: number) {
 }
 
 export async function findTaskById(id: number) {
+  if (isMockEnabled) {
+    return mockDb.findTaskById(id);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .select(`
@@ -100,6 +104,10 @@ export async function insertTask(taskData: any) {
 }
 
 export async function updateTaskById(id: number, taskData: any) {
+  if (isMockEnabled) {
+    return mockDb.updateTaskById(id, taskData);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .update(taskData)
@@ -123,6 +131,10 @@ export async function updateTask(id: number, userId: number, taskData: any) {
 }
 
 export async function deleteTaskById(id: number) {
+  if (isMockEnabled) {
+    return mockDb.deleteTaskById(id);
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .delete()

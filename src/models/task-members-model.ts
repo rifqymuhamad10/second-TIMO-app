@@ -1,6 +1,12 @@
 import { supabase } from "@/lib/supabaseClient";
+import { isMockEnabled, mockDb } from "@/lib/mockDb";
 
 export async function findTaskMembersByTaskId(taskId: number) {
+  if (isMockEnabled) {
+    const task = await mockDb.findTaskById(taskId);
+    return task?.task_members || [];
+  }
+
   const { data, error } = await supabase
     .from("task_members")
     .select(`
@@ -26,6 +32,20 @@ export async function findTaskMembersByTaskId(taskId: number) {
 }
 
 export async function findTaskMember(taskId: number, userId: number) {
+  if (isMockEnabled) {
+    const task = await mockDb.findTaskById(taskId);
+    if (task && Number(task.user_id) === Number(userId)) {
+      return {
+        id: 1,
+        task_id: taskId,
+        user_id: userId,
+        role: "owner",
+        joined_at: task.created_at
+      };
+    }
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("task_members")
     .select("*")
@@ -41,6 +61,16 @@ export async function findTaskMember(taskId: number, userId: number) {
 }
 
 export async function insertTaskMember(taskId: number, userId: number, role: string = "member") {
+  if (isMockEnabled) {
+    return {
+      id: 999,
+      task_id: taskId,
+      user_id: userId,
+      role,
+      joined_at: new Date().toISOString()
+    };
+  }
+
   const { data, error } = await supabase
     .from("task_members")
     .insert([{
@@ -59,6 +89,13 @@ export async function insertTaskMember(taskId: number, userId: number, role: str
 }
 
 export async function deleteTaskMember(taskId: number, userId: number) {
+  if (isMockEnabled) {
+    return {
+      task_id: taskId,
+      user_id: userId
+    };
+  }
+
   const { data, error } = await supabase
     .from("task_members")
     .delete()
@@ -75,6 +112,11 @@ export async function deleteTaskMember(taskId: number, userId: number) {
 }
 
 export async function findTaskIdsByUserId(userId: number) {
+  if (isMockEnabled) {
+    const tasks = await mockDb.findTasksByUserId(userId);
+    return tasks.map((t: any) => t.id);
+  }
+
   const { data, error } = await supabase
     .from("task_members")
     .select("task_id")
