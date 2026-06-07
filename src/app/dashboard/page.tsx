@@ -9,6 +9,9 @@ import StatCard from "@/components/tasks/StatCard";
 import FilterBar from "@/components/tasks/FilterBar";
 import TaskGrid from "@/components/tasks/TaskGrid";
 import EmptyState from "@/components/tasks/EmptyState";
+import StreakCard from "@/components/gamification/StreakCard";
+import PointsCard from "@/components/gamification/PointsCard";
+import RewardNotification from "@/components/gamification/RewardNotification";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -23,17 +26,29 @@ export default function DashboardPage() {
   const handle401 = async () => {
     await logout();
   };
-  
+
   // State Tugas
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // State Gamification
+  const [userStats, setUserStats] = useState({
+    totalPoints: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+  });
+  const [rewardNotification, setRewardNotification] = useState<{
+    pointsEarned: number;
+    currentStreak: number;
+    isNewRecord: boolean;
+  } | null>(null);
+
   // State Filter & Urutan
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
-  const [taskTypeFilter, setTaskTypeFilter] = useState("all"); // "all", "individual", "group"
+  const [taskTypeFilter, setTaskTypeFilter] = useState("all");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("deadline-asc");
 
@@ -65,7 +80,6 @@ export default function DashboardPage() {
         },
       });
 
-      // Jika token tidak valid / sesi habis, logout otomatis
       if (res.status === 401) {
         await handle401();
         return;
@@ -86,9 +100,33 @@ export default function DashboardPage() {
     }
   };
 
+  // Fetch user stats for gamification
+  const fetchUserStats = async () => {
+    try {
+      const activeToken = token || localStorage.getItem("token");
+      const res = await fetch("/api/users/current", {
+        headers: {
+          Authorization: `Bearer ${activeToken}`,
+        },
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        setUserStats({
+          totalPoints: result.data?.total_points || 0,
+          currentStreak: result.data?.current_streak || 0,
+          longestStreak: result.data?.longest_streak || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch user stats:", err);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchTasks();
+      fetchUserStats();
     }
   }, [user]);
 
@@ -130,7 +168,6 @@ export default function DashboardPage() {
   const filteredTasks = useMemo(() => {
     let result = [...tasks];
 
-    // Filter Search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -140,7 +177,6 @@ export default function DashboardPage() {
       );
     }
 
-    // Filter Status
     if (statusFilter !== "all") {
       if (statusFilter === "active") {
         result = result.filter((t) => t.status !== "done");
@@ -149,24 +185,20 @@ export default function DashboardPage() {
       }
     }
 
-    // Filter Prioritas
     if (priorityFilter !== "all") {
       result = result.filter((t) => t.priority === priorityFilter);
     }
 
-    // Filter Tipe Tugas
     if (taskTypeFilter === "individual") {
       result = result.filter((t) => !t.is_group);
     } else if (taskTypeFilter === "group") {
       result = result.filter((t) => t.is_group);
     }
 
-    // Filter Mata Kuliah
     if (selectedSubjects.length > 0) {
       result = result.filter((t) => selectedSubjects.includes(t.subject));
     }
 
-    // Pengurutan
     result.sort((a, b) => {
       if (sortBy === "deadline-asc") {
         return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
@@ -186,7 +218,6 @@ export default function DashboardPage() {
     return result;
   }, [tasks, searchQuery, statusFilter, priorityFilter, taskTypeFilter, selectedSubjects, sortBy]);
 
-  // Buka modal untuk tugas baru
   const handleNewTaskClick = () => {
     setEditingTask(null);
     setFormTitle("");
@@ -195,17 +226,15 @@ export default function DashboardPage() {
     setFormPriority("medium");
     setFormStatus("todo");
     setFormIsGroup(false);
-    
-    // Set default deadline ke besok
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setFormDeadline(tomorrow.toISOString().split("T")[0]);
-    
+
     setFormError(null);
     setModalOpen(true);
   };
 
-  // Buka modal untuk edit tugas
   const handleEditClick = (task: Task) => {
     setEditingTask(task);
     setFormTitle(task.title);
@@ -214,19 +243,17 @@ export default function DashboardPage() {
     setFormPriority(task.priority);
     setFormStatus(task.status);
     setFormIsGroup(task.is_group);
-    
-    // Format deadline YYYY-MM-DD
+
     try {
       setFormDeadline(new Date(task.deadline).toISOString().split("T")[0]);
     } catch (e) {
       setFormDeadline("");
     }
-    
+
     setFormError(null);
     setModalOpen(true);
   };
 
-  // Tambah / Edit Submit
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -261,7 +288,6 @@ export default function DashboardPage() {
         body: JSON.stringify(payload),
       });
 
-      // Jika token tidak valid / sesi habis, logout otomatis
       if (res.status === 401) {
         await handle401();
         return;
@@ -274,7 +300,6 @@ export default function DashboardPage() {
       }
 
       setModalOpen(false);
-      // Reload tugas
       fetchTasks();
     } catch (err: any) {
       setFormError(err.message || "Gagal menyimpan tugas");
@@ -283,7 +308,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Hapus tugas
   const handleDeleteClick = async (id: number) => {
     if (!confirm("Apakah Anda yakin ingin menghapus tugas ini?")) return;
 
@@ -306,14 +330,12 @@ export default function DashboardPage() {
         throw new Error(result.message || "Gagal menghapus tugas");
       }
 
-      // Reload tugas
       fetchTasks();
     } catch (err: any) {
       alert(err.message || "Terjadi kesalahan saat menghapus tugas");
     }
   };
 
-  // Ubah status tugas (toggle cepat)
   const handleToggleStatus = async (task: Task) => {
     const nextStatusMap: Record<string, "todo" | "inprogress" | "done"> = {
       todo: "inprogress",
@@ -343,6 +365,25 @@ export default function DashboardPage() {
         throw new Error("Gagal mengubah status");
       }
 
+      const result = await res.json();
+
+      // Jika ada gamification result (task selesai)
+      if (result.data?.gamification) {
+        const gamif = result.data.gamification;
+        setRewardNotification({
+          pointsEarned: gamif.pointsEarned,
+          currentStreak: gamif.currentStreak,
+          isNewRecord: gamif.isNewRecord,
+        });
+
+        // Update user stats
+        setUserStats({
+          totalPoints: gamif.totalPoints,
+          currentStreak: gamif.currentStreak,
+          longestStreak: gamif.longestStreak,
+        });
+      }
+
       fetchTasks();
     } catch (err: any) {
       console.error(err);
@@ -368,9 +409,7 @@ export default function DashboardPage() {
           availableSubjects={availableSubjects}
         />
 
-        {/* Dashboard Main Content */}
         <main className="flex-grow p-6 md:p-8 lg:p-10 w-full max-w-7xl mx-auto lg:pb-12 pb-24">
-          {/* Header dashboard */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="font-display font-black text-3xl md:text-4xl text-nb-ink uppercase tracking-wider leading-none mb-2">
@@ -380,7 +419,7 @@ export default function DashboardPage() {
                 Kamu memiliki <strong className="text-nb-ink font-bold">{stats.active} tugas aktif</strong> yang sedang berjalan.
               </p>
             </div>
-            
+
             <Button
               variant="primary"
               onClick={handleNewTaskClick}
@@ -413,6 +452,15 @@ export default function DashboardPage() {
             />
           </div>
 
+          {/* Gamification Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <StreakCard
+              currentStreak={userStats.currentStreak}
+              longestStreak={userStats.longestStreak}
+            />
+            <PointsCard totalPoints={userStats.totalPoints} />
+          </div>
+
           <FilterBar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -424,7 +472,6 @@ export default function DashboardPage() {
             setTaskType={setTaskTypeFilter}
           />
 
-          {/* List Tugas */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               <Skeleton variant="rect" className="h-44" />
@@ -458,13 +505,21 @@ export default function DashboardPage() {
         </main>
       </div>
 
-      {/* Navigasi Mobile Bawah */}
       <MobileNav
         onOpenSidebar={() => setSidebarOpen(true)}
         onOpenAddTask={handleNewTaskClick}
       />
 
-      {/* Modal Form Tambah / Edit */}
+      {/* Reward Notification */}
+      {rewardNotification && (
+        <RewardNotification
+          pointsEarned={rewardNotification.pointsEarned}
+          currentStreak={rewardNotification.currentStreak}
+          isNewRecord={rewardNotification.isNewRecord}
+          onClose={() => setRewardNotification(null)}
+        />
+      )}
+
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -579,7 +634,7 @@ export default function DashboardPage() {
               className="w-4 h-4 text-nb-yellow bg-nb-surface border-nb-2 focus:ring-nb-yellow focus:ring-2"
             />
             <label htmlFor="task-is-group" className="font-body font-bold text-sm text-nb-ink">
-              Jadikan Tugas Kelompok (Anda bisa mengundang anggota setelah dibuat)
+              Jadikan Tugas Kelompok
             </label>
           </div>
 
