@@ -6,6 +6,7 @@ import {
   updateTask,
   deleteTask,
 } from "@/models/tasks-model";
+import { processTaskCompletion } from "./gamification-service";
 
 export async function getTasksForUser(token: string) {
   const user = await getCurrentUser(token);
@@ -78,7 +79,27 @@ export async function updateTaskForUser(token: string, id: number, payload: any)
     updatedData.status = status;
   }
 
-  return await updateTask(id, user.id, updatedData);
+  // Update task terlebih dahulu
+  const updatedTask = await updateTask(id, user.id, updatedData);
+
+  // Jika status berubah menjadi "done" dan sebelumnya bukan "done"
+  // Proses gamification (poin & streak)
+  let gamificationResult = null;
+  if (status === "done" && existingTask.status !== "done") {
+    try {
+      gamificationResult = await processTaskCompletion(
+        user.id, 
+        updatedTask.deadline
+      );
+    } catch (err) {
+      console.error("Error processing gamification:", err);
+    }
+  }
+
+  return {
+    task: updatedTask,
+    gamification: gamificationResult
+  };
 }
 
 export async function deleteTaskForUser(token: string, id: number) {

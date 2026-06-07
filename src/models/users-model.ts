@@ -41,3 +41,23 @@ export async function findUserById(id: number) {
 
   return data;
 }
+
+export async function updateUserStats(id: number, updates: { 
+  total_points?: number; 
+  current_streak?: number; 
+  longest_streak?: number; 
+  last_completion_date?: string; 
+}) {
+  const { data, error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}

@@ -9,6 +9,9 @@ import StatCard from "@/components/tasks/StatCard";
 import FilterBar from "@/components/tasks/FilterBar";
 import TaskGrid from "@/components/tasks/TaskGrid";
 import EmptyState from "@/components/tasks/EmptyState";
+import StreakCard from "@/components/gamification/StreakCard";
+import PointsCard from "@/components/gamification/PointsCard";
+import RewardNotification from "@/components/gamification/RewardNotification";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -23,6 +26,18 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // State Gamification
+  const [userStats, setUserStats] = useState({
+    totalPoints: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+  });
+  const [rewardNotification, setRewardNotification] = useState<{
+    pointsEarned: number;
+    currentStreak: number;
+    isNewRecord: boolean;
+  } | null>(null);
 
   // State Filter & Urutan
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,8 +90,32 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       fetchTasks();
+      fetchUserStats();
     }
   }, [user]);
+
+  // Fetch user stats for gamification
+  const fetchUserStats = async () => {
+    try {
+      const activeToken = token || localStorage.getItem("token");
+      const res = await fetch("/api/users/current", {
+        headers: {
+          Authorization: `Bearer ${activeToken}`,
+        },
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        setUserStats({
+          totalPoints: result.data?.total_points || 0,
+          currentStreak: result.data?.current_streak || 0,
+          longestStreak: result.data?.longest_streak || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch user stats:", err);
+    }
+  };
 
   // List mata kuliah unik untuk filter di sidebar
   const availableSubjects = useMemo(() => {
@@ -288,6 +327,25 @@ export default function DashboardPage() {
         throw new Error("Gagal mengubah status");
       }
 
+      const result = await res.json();
+
+      // Jika ada gamification result (task selesai)
+      if (result.data?.gamification) {
+        const gamif = result.data.gamification;
+        setRewardNotification({
+          pointsEarned: gamif.pointsEarned,
+          currentStreak: gamif.currentStreak,
+          isNewRecord: gamif.isNewRecord,
+        });
+
+        // Update user stats
+        setUserStats({
+          totalPoints: gamif.totalPoints,
+          currentStreak: gamif.currentStreak,
+          longestStreak: gamif.longestStreak,
+        });
+      }
+
       fetchTasks();
     } catch (err: any) {
       console.error(err);
@@ -356,6 +414,15 @@ export default function DashboardPage() {
             />
           </div>
 
+          {/* Gamification Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <StreakCard
+              currentStreak={userStats.currentStreak}
+              longestStreak={userStats.longestStreak}
+            />
+            <PointsCard totalPoints={userStats.totalPoints} />
+          </div>
+
           <FilterBar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -400,6 +467,16 @@ export default function DashboardPage() {
         onOpenSidebar={() => setSidebarOpen(true)}
         onOpenAddTask={handleNewTaskClick}
       />
+
+      {/* Reward Notification */}
+      {rewardNotification && (
+        <RewardNotification
+          pointsEarned={rewardNotification.pointsEarned}
+          currentStreak={rewardNotification.currentStreak}
+          isNewRecord={rewardNotification.isNewRecord}
+          onClose={() => setRewardNotification(null)}
+        />
+      )}
 
       {/* Modal Form Tambah / Edit */}
       <Modal
