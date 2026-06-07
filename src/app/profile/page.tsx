@@ -7,7 +7,7 @@ import MobileNav from "@/components/layout/MobileNav";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import { Task } from "@/components/tasks/TaskCard";
-import { User, Mail, Award, BookOpen, LogOut, ArrowLeft, Edit2, Camera, AlertTriangle, CheckCircle2, Upload, X } from "lucide-react";
+import { User, Mail, Award, BookOpen, LogOut, ArrowLeft, Edit2, Camera, AlertTriangle, CheckCircle2, Upload, X, Flame, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PomodoroStats from "@/components/pomodoro/PomodoroStats";
 import Modal from "@/components/ui/Modal";
@@ -277,6 +277,14 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
                   <BookOpen className="w-4 h-4 text-nb-ink/60 flex-shrink-0" />
                   <span className="break-words">Jurusan / Kelas: {user?.major || "Jurusan / Kelas"}</span>
+                </div>
+                <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80 pt-2 border-t border-nb-ink/10">
+                  <Flame className="w-4 h-4 text-nb-orange flex-shrink-0" />
+                  <span>Streak Tertinggi: <strong className="font-bold text-nb-ink">{user?.longest_streak || 0} hari</strong></span>
+                </div>
+                <div className="flex items-center gap-3 font-body text-sm text-nb-ink/80">
+                  <Star className="w-4 h-4 text-nb-yellow flex-shrink-0" />
+                  <span>Level saat ini: <strong className="font-bold text-nb-ink">{Math.floor((user?.total_points || 0) / 500) + 1}</strong> ({user?.total_points || 0} poin)</span>
                 </div>
               </div>
 

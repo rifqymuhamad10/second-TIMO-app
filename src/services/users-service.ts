@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { findUserByEmail, insertUser, findUserById, updateUserById } from "@/models/users-model";
 import { insertSession, findSessionByToken, deleteSessionByToken } from "@/models/sessions-model";
+import { checkAndResetStreak } from "./gamification-service";
 
 export async function registerUser(payload: any) {
   const { username, password, email, role, institution, major } = payload;
@@ -35,6 +36,10 @@ export async function registerUser(payload: any) {
     role: finalRole,
     institution,
     major,
+    total_points: 0,
+    current_streak: 0,
+    longest_streak: 0,
+    streak_freeze: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -88,10 +93,13 @@ export async function getCurrentUser(token: string) {
   }
 
   // 2. Cari user berdasarkan user_id dari session
-  const user = await findUserById(session.user_id);
+  let user = await findUserById(session.user_id);
   if (!user) {
     throw new Error("unauthorized");
   }
+
+  // Cek dan reset streak harian (streak freeze / missed day logic)
+  user = await checkAndResetStreak(user);
 
   // 3. Keamanan: Hapus password hash dari response
   const { password, ...userWithoutPassword } = user;

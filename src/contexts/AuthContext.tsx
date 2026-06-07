@@ -12,6 +12,10 @@ interface User {
   major?: string;
   avatar_url?: string;
   institution?: string;
+  total_points?: number;
+  current_streak?: number;
+  longest_streak?: number;
+  streak_freeze?: number;
 }
 
 interface AuthContextType {
