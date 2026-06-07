@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import Button from "@/components/ui/Button";
 import { Snowflake, ShieldCheck, Flame, Info } from "lucide-react";
@@ -69,10 +68,7 @@ export default function ShopPage() {
 
   return (
     <div className="min-h-screen bg-nb-bg text-nb-ink font-body flex">
-      {/* Sidebar untuk Desktop */}
-      <Sidebar />
-
-      <main className="flex-1 flex flex-col md:ml-64 min-h-screen">
+      <main className="flex-1 flex flex-col min-h-screen">
         {/* Navbar Atas */}
         <Navbar />
 
