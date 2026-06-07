@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 import { Home, User, SlidersHorizontal, Plus, Timer, Store } from "lucide-react";
 
 interface MobileNavProps {
-  onOpenSidebar: () => void;
-  onOpenAddTask: () => void;
+  onOpenSidebar?: () => void;
+  onOpenAddTask?: () => void;
 }
 
-export default function MobileNav({ onOpenSidebar, onOpenAddTask }: MobileNavProps) {
+export default function MobileNav({ onOpenSidebar = () => {}, onOpenAddTask = () => {} }: MobileNavProps) {
   const pathname = usePathname();
 
   const isLinkActive = (path: string) => {
