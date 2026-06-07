@@ -1,16 +1,15 @@
 import { getCurrentUser } from "./users-service";
 import {
   findTasksByUserId,
+  findTaskById,
   insertTask,
   updateTaskById,
   deleteTaskById,
+  updateTask,
 } from "@/models/tasks-model";
-<<<<<<< HEAD
 import { processTaskCompletion } from "./gamification-service";
-=======
 import { findTaskMember } from "@/models/task-members-model";
 import { getPomodoroSessionCountsPerTask } from "@/models/pomodoro-model";
->>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5
 
 export async function getTasksForUser(token: string) {
   const user = await getCurrentUser(token);
@@ -70,6 +69,11 @@ export async function updateTaskForUser(token: string, id: number, payload: any)
     throw new Error("unauthorized");
   }
 
+  const existingTask = await findTaskById(id);
+  if (!existingTask) {
+    throw new Error("Task not found or forbidden");
+  }
+
   // Check membership — both owner and member can edit
   const membership = await findTaskMember(id, user.id);
   if (!membership) {
@@ -97,7 +101,6 @@ export async function updateTaskForUser(token: string, id: number, payload: any)
     updatedData.status = status;
   }
 
-<<<<<<< HEAD
   // Update task terlebih dahulu
   const updatedTask = await updateTask(id, user.id, updatedData);
 
@@ -119,9 +122,6 @@ export async function updateTaskForUser(token: string, id: number, payload: any)
     task: updatedTask,
     gamification: gamificationResult
   };
-=======
-  return await updateTaskById(id, updatedData);
->>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5
 }
 
 export async function deleteTaskForUser(token: string, id: number) {
