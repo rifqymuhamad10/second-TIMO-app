@@ -1,9 +1,12 @@
 "use client";
 
-import React from "react";
-import { Calendar, Edit3, Trash2, CheckCircle2, Circle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Calendar, Edit3, Trash2, CheckCircle2, Circle, Users, Flame, Timer } from "lucide-react";
 import Badge from "../ui/Badge";
 import { getSubjectColor } from "@/lib/colors";
+import DeadlineCountdown from "./DeadlineCountdown";
+import CollaboratorList, { TaskMember } from "./CollaboratorList";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Task {
   id: number;
@@ -14,8 +17,11 @@ export interface Task {
   status: "todo" | "inprogress" | "done";
   subject: string;
   deadline: string;
+  is_group: boolean;
   created_at: string;
   updated_at: string;
+  pomodoro_count?: number;
+  task_members?: TaskMember[];
 }
 
 interface TaskCardProps {
@@ -23,18 +29,85 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
   onToggleStatus: (task: Task) => void;
+  onUpdateMembers?: () => void;
 }
 
-export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: TaskCardProps) {
+export default function TaskCard({ task, onEdit, onDelete, onToggleStatus, onUpdateMembers }: TaskCardProps) {
+  const { user, token } = useAuth();
+  const [showMembers, setShowMembers] = React.useState(false);
   // Tentukan warna latar berdasarkan status dan mata kuliah
   const subColor = getSubjectColor(task.subject);
-  
+
   let bgStyle = subColor.bg;
   if (task.status === "inprogress") {
     bgStyle = "bg-[#E3F2FD]"; // Biru muda
   } else if (task.status === "done") {
     bgStyle = "bg-[#F1F8E9]"; // Hijau muda
   }
+
+  const [isTimerActive, setIsTimerActive] = useState(false);
+
+  useEffect(() => {
+    const checkTimerActive = () => {
+      const storedState = localStorage.getItem("timo-pomodoro-state");
+      if (storedState) {
+        try {
+          const parsed = JSON.parse(storedState);
+          if (parsed.isRunning && Number(parsed.activeTaskId) === Number(task.id)) {
+            setIsTimerActive(true);
+            return;
+          }
+        } catch (e) {}
+      }
+      setIsTimerActive(false);
+    };
+
+    checkTimerActive();
+
+    // Dengarkan perubahan local storage (untuk sinkronisasi antar tab/komponen)
+    window.addEventListener("storage", checkTimerActive);
+    // Interval check juga untuk mendeteksi perubahan cepat
+    const interval = setInterval(checkTimerActive, 1000);
+
+    return () => {
+      window.removeEventListener("storage", checkTimerActive);
+      clearInterval(interval);
+    };
+  }, [task.id]);
+
+  const startPomodoroForTask = () => {
+    localStorage.setItem("timo-active-task-id", String(task.id));
+
+    let currentCount = 0;
+    const storedState = localStorage.getItem("timo-pomodoro-state");
+    if (storedState) {
+      try {
+        const parsed = JSON.parse(storedState);
+        currentCount = parsed.focusSessionCount || 0;
+      } catch (e) {}
+    }
+
+    let focusDuration = 25;
+    const storedSettings = localStorage.getItem("timo-pomodoro-settings");
+    if (storedSettings) {
+      try {
+        const parsed = JSON.parse(storedSettings);
+        focusDuration = parsed.focusDuration || 25;
+      } catch (e) {}
+    }
+
+    const newState = {
+      timeLeft: focusDuration * 60,
+      isRunning: true,
+      sessionType: "focus",
+      activeTaskId: task.id,
+      focusSessionCount: currentCount,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem("timo-pomodoro-state", JSON.stringify(newState));
+
+    window.location.href = "/pomodoro";
+  };
 
   // Format tanggal Indonesia
   const formatDate = (dateStr: string) => {
@@ -53,11 +126,11 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
       case "high":
-        return "🔴 Tinggi";
+        return "Tinggi";
       case "medium":
-        return "🟡 Sedang";
+        return "Sedang";
       case "low":
-        return "🟢 Rendah";
+        return "Rendah";
       default:
         return priority;
     }
@@ -82,8 +155,17 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
     >
       {/* Atas: Badge Prioritas & Status */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <Badge variant={task.priority}>{getPriorityLabel(task.priority)}</Badge>
-        
+        <div className="flex gap-2 items-center">
+          <Badge variant={task.priority}>{getPriorityLabel(task.priority)}</Badge>
+          {task.is_group && (
+            <Badge variant="low">
+              <span className="flex items-center gap-1">
+                <Users className="w-3 h-3" /> Kelompok
+              </span>
+            </Badge>
+          )}
+        </div>
+
         <button
           onClick={() => onToggleStatus(task)}
           className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider border-nb-2 bg-nb-surface text-nb-ink px-2 py-0.5 hover:-translate-y-0.5 hover:shadow-[1px_1px_0px_#1A1A1A] active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
@@ -99,10 +181,11 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
 
       {/* Tengah: Judul & Deskripsi */}
       <div className="flex-grow mb-6">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border-nb-2 ${subColor.accent}`}>
             {task.subject}
           </span>
+          <DeadlineCountdown deadlineStr={task.deadline} status={task.status} />
         </div>
         <h3 className="font-display font-extrabold text-lg text-nb-ink leading-tight mb-2 uppercase break-words">
           {task.title}
@@ -114,12 +197,52 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
 
       {/* Bawah: Deadline & Aksi */}
       <div className="border-t-2 border-nb-ink/10 pt-4 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-nb-ink/70">
-          <Calendar className="w-4 h-4 text-nb-ink/60" />
-          {formatDate(task.deadline)}
+        <div className="flex items-center gap-3 flex-wrap">
+          {task.pomodoro_count !== undefined && task.pomodoro_count > 0 && (
+            <span className="font-mono font-bold text-xs text-nb-ink flex items-center gap-1" title="Jumlah sesi Pomodoro selesai">
+              <Flame className="w-3.5 h-3.5 text-nb-red fill-nb-red" />
+              <span>×{task.pomodoro_count}</span>
+            </span>
+          )}
+          <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-nb-ink/70">
+            <Calendar className="w-4 h-4 text-nb-ink/60" />
+            {formatDate(task.deadline)}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Tombol Pomodoro */}
+          {isTimerActive ? (
+            <button
+              onClick={() => window.location.href = "/pomodoro"}
+              className="px-2.5 py-2 border-nb-2 bg-nb-red text-white hover:bg-red-600 font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              title="Timer Pomodoro sedang berjalan"
+            >
+              <Timer className="w-3.5 h-3.5 animate-spin" />
+              <span>Aktif</span>
+            </button>
+          ) : (
+            <button
+              onClick={startPomodoroForTask}
+              className="px-2.5 py-2 border-nb-2 bg-nb-surface text-nb-ink hover:bg-nb-yellow font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              title="Mulai Sesi Pomodoro untuk tugas ini"
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>Fokus</span>
+            </button>
+          )}
+
+          {/* Tombol Toggle Members (jika grup) */}
+          {task.is_group && (
+            <button
+              onClick={() => setShowMembers(!showMembers)}
+              className="p-2 border-nb-2 bg-nb-surface text-nb-ink hover:bg-nb-yellow active:translate-y-0.5 active:shadow-none transition-colors cursor-pointer"
+              title="Lihat Anggota"
+            >
+              <Users className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Tombol Edit */}
           <button
             onClick={() => onEdit(task)}
@@ -128,7 +251,7 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
           >
             <Edit3 className="w-4 h-4" />
           </button>
-          
+
           {/* Tombol Hapus */}
           <button
             onClick={() => onDelete(task.id)}
@@ -139,6 +262,46 @@ export default function TaskCard({ task, onEdit, onDelete, onToggleStatus }: Tas
           </button>
         </div>
       </div>
+
+      {/* Collaborator List (Expanded) */}
+      {showMembers && task.is_group && user && task.task_members && (
+        <CollaboratorList
+          taskId={task.id}
+          members={task.task_members}
+          currentUserId={user.id}
+          isOwner={task.task_members.some((m) => m.user_id === user.id && m.role === "owner")}
+          onAddMember={async (email) => {
+            const activeToken = token || localStorage.getItem("token");
+            const res = await fetch(`/api/tasks/${task.id}/members`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${activeToken}`,
+              },
+              body: JSON.stringify({ email }),
+            });
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.message);
+            }
+            if (onUpdateMembers) onUpdateMembers();
+          }}
+          onRemoveMember={async (userId) => {
+            const activeToken = token || localStorage.getItem("token");
+            const res = await fetch(`/api/tasks/${task.id}/members/${userId}`, {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${activeToken}`,
+              },
+            });
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.message);
+            }
+            if (onUpdateMembers) onUpdateMembers();
+          }}
+        />
+      )}
     </div>
   );
 }

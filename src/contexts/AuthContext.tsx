@@ -9,6 +9,9 @@ interface User {
   email: string;
   role: string;
   created_at: string;
+  major?: string;
+  avatar_url?: string;
+  institution?: string;
 }
 
 interface AuthContextType {
@@ -16,7 +19,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string, role: string, institution: string, major: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -42,8 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(result.data);
         setToken(authToken);
       } else {
-        // Token tidak valid atau kedaluwarsa
+        // Token tidak valid atau kedaluwarsa — hapus semua sesi & alihkan ke login
         logoutState();
+        router.replace("/login");
       }
     } catch (err) {
       console.error("Gagal mengambil data user saat ini:", err);
@@ -64,6 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logoutState = () => {
     localStorage.removeItem("token");
+    // Hapus cookie token agar middleware tidak mengira user masih login
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     setUser(null);
     setToken(null);
   };
@@ -86,6 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server tidak mengembalikan respons JSON. Harap periksa apakah server berjalan dan konfigurasi database/Supabase di `.env.local` sudah benar.");
+      }
+
       const result = await res.json();
 
       if (!res.ok) {
@@ -105,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (username: string, email: string, password: string, role: string, institution: string, major: string) => {
     // Registrasi di TIMO Web V2 membuat user baru. Pengguna harus login secara manual setelah mendaftar
     setLoading(true);
     try {
@@ -114,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, role, institution, major }),
       });
 
       const result = await res.json();

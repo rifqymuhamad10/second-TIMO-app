@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { registerUser, loginUser, getCurrentUser, logoutUser } from "@/services/users-service";
+import { registerUser, loginUser, getCurrentUser, logoutUser, updateUserProfile } from "@/services/users-service";
 
 export async function registerHandler(request: Request) {
   try {
@@ -94,6 +94,53 @@ export async function getCurrentUserHandler(request: Request) {
       return NextResponse.json(
         { message: "unauthorized" },
         { status: 401 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Internal server error", error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function updateCurrentUserHandler(request: Request) {
+  try {
+    let token = "";
+    const authHeader = request.headers.get("Authorization");
+
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+      token = authHeader.substring(7).trim();
+    } else {
+      const cookieStore = await cookies();
+      token = cookieStore.get("token")?.value || "";
+    }
+
+    if (!token) {
+      return NextResponse.json(
+        { message: "unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const user = await updateUserProfile(token, body);
+
+    return NextResponse.json(
+      { data: user },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    if (error.message === "unauthorized") {
+      return NextResponse.json(
+        { message: "unauthorized" },
+        { status: 401 }
+      );
+    }
+    if (error.message === "username tidak boleh lebih dari 255 karakter" || error.message.startsWith("Password minimal")) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: 400 }
       );
     }
 

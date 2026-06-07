@@ -1,13 +1,13 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { findUserByEmail, insertUser, findUserById } from "@/models/users-model";
+import { findUserByEmail, insertUser, findUserById, updateUserById } from "@/models/users-model";
 import { insertSession, findSessionByToken, deleteSessionByToken } from "@/models/sessions-model";
 
 export async function registerUser(payload: any) {
-  const { username, password, email } = payload;
+  const { username, password, email, role, institution, major } = payload;
 
-  if (!username || !password || !email) {
-    throw new Error("Missing required fields");
+  if (!username || !password || !email || !role || !institution || !major) {
+    throw new Error("Semua field wajib diisi");
   }
 
   if (username.length > 255) {
@@ -24,12 +24,17 @@ export async function registerUser(payload: any) {
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+  const validRoles = ["mahasiswa", "pelajar", "umum"];
+  const finalRole = validRoles.includes(role) ? role : "mahasiswa";
+
   // Buat data user baru
   const newUserData = {
     username,
     email,
     password: hashedPassword,
-    role: "user",
+    role: finalRole,
+    institution,
+    major,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -117,6 +122,63 @@ export async function logoutUser(token: string) {
   // 4. Keamanan: Hapus password hash dari response
   const { password, ...userWithoutPassword } = user;
 
+  return userWithoutPassword;
+}
+
+export async function updateUserProfile(token: string, payload: any) {
+  if (!token) {
+    throw new Error("unauthorized");
+  }
+
+  const session = await findSessionByToken(token);
+  if (!session) {
+    throw new Error("unauthorized");
+  }
+
+  const user = await findUserById(session.user_id);
+  if (!user) {
+    throw new Error("unauthorized");
+  }
+
+  const { username, role, major, institution, avatar_url, password } = payload;
+  const updateData: any = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (username !== undefined) {
+    if (username.length > 255) {
+      throw new Error("username tidak boleh lebih dari 255 karakter");
+    }
+    updateData.username = username;
+  }
+
+  if (role !== undefined) {
+    const validRoles = ["mahasiswa", "pelajar", "umum"];
+    updateData.role = validRoles.includes(role) ? role : "mahasiswa";
+  }
+
+  if (major !== undefined) {
+    updateData.major = major;
+  }
+
+  if (institution !== undefined) {
+    updateData.institution = institution;
+  }
+
+  if (avatar_url !== undefined) {
+    updateData.avatar_url = avatar_url;
+  }
+
+  if (password) {
+    if (password.length < 6) {
+      throw new Error("Password minimal 6 karakter");
+    }
+    const saltRounds = 10;
+    updateData.password = await bcrypt.hash(password, saltRounds);
+  }
+
+  const updatedUser = await updateUserById(user.id, updateData);
+  const { password: _, ...userWithoutPassword } = updatedUser;
   return userWithoutPassword;
 }
 

@@ -13,6 +13,8 @@ interface SidebarProps {
   selectedSubjects: string[];
   toggleSubject: (subject: string) => void;
   availableSubjects: string[];
+  taskType: string;
+  setTaskType: (type: string) => void;
 }
 
 export default function Sidebar({
@@ -25,6 +27,8 @@ export default function Sidebar({
   selectedSubjects,
   toggleSubject,
   availableSubjects,
+  taskType,
+  setTaskType,
 }: SidebarProps) {
   const statusOptions = [
     { value: "all", label: "Semua Tugas", icon: CheckSquare },
@@ -75,6 +79,36 @@ export default function Sidebar({
               >
                 <Icon className="w-4 h-4" />
                 {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* SECTION: Tipe Tugas */}
+      <div className="mb-8">
+        <h4 className="font-display font-extrabold text-xs uppercase tracking-wider text-nb-ink/60 mb-4 border-b-2 border-nb-ink/10 pb-1">
+          Tipe Tugas
+        </h4>
+        <div className="flex flex-col gap-2">
+          {[
+            { value: "all", label: "Semua Tipe" },
+            { value: "individual", label: "Individu" },
+            { value: "group", label: "Kelompok" },
+          ].map((opt) => {
+            const isActive = taskType === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setTaskType(opt.value)}
+                className={`flex items-center justify-between px-3 py-2 text-sm font-bold uppercase tracking-wider border-nb-2 transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-nb-blue text-white shadow-[2px_2px_0px_#1A1A1A]"
+                    : "bg-nb-surface text-nb-ink hover:bg-nb-blue/10"
+                }`}
+              >
+                <span>{opt.label}</span>
+                {isActive && <div className="w-2.5 h-2.5 bg-white border-nb-2 border-white" />}
               </button>
             );
           })}

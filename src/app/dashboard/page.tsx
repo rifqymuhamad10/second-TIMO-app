@@ -17,10 +17,15 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Skeleton from "@/components/ui/Skeleton";
 import { Task } from "@/components/tasks/TaskCard";
-import { ClipboardList, Hourglass, CheckCircle2, Plus } from "lucide-react";
+import { ClipboardList, Hourglass, CheckCircle2, Plus, AlertTriangle } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
+
+  // Tangani respon 401: hapus sesi dan redirect ke login
+  const handle401 = async () => {
+    await logout();
+  };
   
   // State Tugas
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -43,6 +48,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [taskTypeFilter, setTaskTypeFilter] = useState("all"); // "all", "individual", "group"
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("deadline-asc");
 
@@ -58,6 +64,7 @@ export default function DashboardPage() {
   const [formPriority, setFormPriority] = useState<"high" | "medium" | "low">("medium");
   const [formStatus, setFormStatus] = useState<"todo" | "inprogress" | "done">("todo");
   const [formDeadline, setFormDeadline] = useState("");
+  const [formIsGroup, setFormIsGroup] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
@@ -73,8 +80,15 @@ export default function DashboardPage() {
         },
       });
 
+      // Jika token tidak valid / sesi habis, logout otomatis
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Gagal mengambil data tugas");
+        const result = await res.json();
+        throw new Error(result.message || "Gagal mengambil data tugas");
       }
 
       const result = await res.json();
@@ -94,6 +108,7 @@ export default function DashboardPage() {
     }
   }, [user]);
 
+<<<<<<< HEAD
   // Fetch user stats for gamification
   const fetchUserStats = async () => {
     try {
@@ -116,6 +131,21 @@ export default function DashboardPage() {
       console.error("Failed to fetch user stats:", err);
     }
   };
+=======
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get("action");
+      if (action === "addTask") {
+        handleNewTaskClick();
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (action === "openSidebar") {
+        setSidebarOpen(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+>>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5
 
   // List mata kuliah unik untuk filter di sidebar
   const availableSubjects = useMemo(() => {
@@ -165,6 +195,13 @@ export default function DashboardPage() {
       result = result.filter((t) => t.priority === priorityFilter);
     }
 
+    // Filter Tipe Tugas
+    if (taskTypeFilter === "individual") {
+      result = result.filter((t) => !t.is_group);
+    } else if (taskTypeFilter === "group") {
+      result = result.filter((t) => t.is_group);
+    }
+
     // Filter Mata Kuliah
     if (selectedSubjects.length > 0) {
       result = result.filter((t) => selectedSubjects.includes(t.subject));
@@ -188,7 +225,7 @@ export default function DashboardPage() {
     });
 
     return result;
-  }, [tasks, searchQuery, statusFilter, priorityFilter, selectedSubjects, sortBy]);
+  }, [tasks, searchQuery, statusFilter, priorityFilter, taskTypeFilter, selectedSubjects, sortBy]);
 
   // Buka modal untuk tugas baru
   const handleNewTaskClick = () => {
@@ -198,6 +235,7 @@ export default function DashboardPage() {
     setFormSubject("");
     setFormPriority("medium");
     setFormStatus("todo");
+    setFormIsGroup(false);
     
     // Set default deadline ke besok
     const tomorrow = new Date();
@@ -216,6 +254,7 @@ export default function DashboardPage() {
     setFormSubject(task.subject);
     setFormPriority(task.priority);
     setFormStatus(task.status);
+    setFormIsGroup(task.is_group);
     
     // Format deadline YYYY-MM-DD
     try {
@@ -251,6 +290,7 @@ export default function DashboardPage() {
         priority: formPriority,
         status: formStatus,
         deadline: formDeadline,
+        is_group: formIsGroup,
       };
 
       const res = await fetch(url, {
@@ -261,6 +301,12 @@ export default function DashboardPage() {
         },
         body: JSON.stringify(payload),
       });
+
+      // Jika token tidak valid / sesi habis, logout otomatis
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
 
       const result = await res.json();
 
@@ -291,8 +337,14 @@ export default function DashboardPage() {
         },
       });
 
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Gagal menghapus tugas");
+        const result = await res.json();
+        throw new Error(result.message || "Gagal menghapus tugas");
       }
 
       // Reload tugas
@@ -322,6 +374,11 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({ status: nextStatus }),
       });
+
+      if (res.status === 401) {
+        await handle401();
+        return;
+      }
 
       if (!res.ok) {
         throw new Error("Gagal mengubah status");
@@ -364,6 +421,8 @@ export default function DashboardPage() {
           setStatus={setStatusFilter}
           priority={priorityFilter}
           setPriority={setPriorityFilter}
+          taskType={taskTypeFilter}
+          setTaskType={setTaskTypeFilter}
           selectedSubjects={selectedSubjects}
           toggleSubject={toggleSubject}
           availableSubjects={availableSubjects}
@@ -375,7 +434,7 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="font-display font-black text-3xl md:text-4xl text-nb-ink uppercase tracking-wider leading-none mb-2">
-                Halo, {user?.username || "Pengguna"}! 👋
+                Halo, {user?.username || "Pengguna"}!
               </h1>
               <p className="font-body text-sm md:text-base text-nb-ink/70">
                 Kamu memiliki <strong className="text-nb-ink font-bold">{stats.active} tugas aktif</strong> yang sedang berjalan.
@@ -430,6 +489,8 @@ export default function DashboardPage() {
             setSortBy={setSortBy}
             status={statusFilter}
             setStatus={setStatusFilter}
+            taskType={taskTypeFilter}
+            setTaskType={setTaskTypeFilter}
           />
 
           {/* List Tugas */}
@@ -440,11 +501,14 @@ export default function DashboardPage() {
               <Skeleton variant="rect" className="h-44" />
             </div>
           ) : error ? (
-            <div className="bg-nb-red/10 border-nb-2 border-nb-red p-6 text-center text-nb-red font-bold uppercase tracking-wider text-sm shadow-nb">
-              ⚠️ {error}
+            <div className="bg-nb-red/10 border-nb-2 border-nb-red p-6 text-center text-nb-red font-bold uppercase tracking-wider text-sm shadow-nb flex flex-col items-center justify-center gap-3">
+              <span className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                {error}
+              </span>
               <button
                 onClick={fetchTasks}
-                className="block mx-auto mt-4 px-4 py-2 border-nb-2 bg-nb-surface text-nb-ink text-xs cursor-pointer"
+                className="block mx-auto mt-2 px-4 py-2 border-nb-2 bg-nb-surface text-nb-ink text-xs cursor-pointer"
               >
                 Coba Lagi
               </button>
@@ -457,6 +521,7 @@ export default function DashboardPage() {
               onEdit={handleEditClick}
               onDelete={handleDeleteClick}
               onToggleStatus={handleToggleStatus}
+              onUpdateMembers={fetchTasks}
             />
           )}
         </main>
@@ -485,8 +550,9 @@ export default function DashboardPage() {
         title={editingTask ? "Ubah Tugas" : "Tambah Tugas Baru"}
       >
         {formError && (
-          <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-5 font-body font-bold text-xs uppercase text-nb-red">
-            ⚠️ {formError}
+          <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-5 font-body font-bold text-xs uppercase text-nb-red flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {formError}
           </div>
         )}
 
@@ -494,7 +560,7 @@ export default function DashboardPage() {
           <Input
             id="task-title"
             label="Judul Tugas *"
-            placeholder="Contoh: Buat ERD Sistem Retail"
+            placeholder="Judul Tugas"
             value={formTitle}
             onChange={(e) => setFormTitle(e.target.value)}
             disabled={formSubmitting}
@@ -522,7 +588,7 @@ export default function DashboardPage() {
             <Input
               id="task-subject"
               label="Mata Kuliah *"
-              placeholder="Contoh: RPL, Basis Data"
+              placeholder="Mata Kuliah"
               value={formSubject}
               onChange={(e) => setFormSubject(e.target.value)}
               disabled={formSubmitting}
@@ -543,9 +609,9 @@ export default function DashboardPage() {
                 disabled={formSubmitting}
                 className="w-full bg-nb-surface text-nb-ink border-nb px-4 h-12 text-base font-body focus:outline-none focus:border-nb-blue transition-colors cursor-pointer"
               >
-                <option value="high">🔴 Tinggi (High)</option>
-                <option value="medium">🟡 Sedang (Medium)</option>
-                <option value="low">🟢 Rendah (Low)</option>
+                <option value="high">Tinggi (High)</option>
+                <option value="medium">Sedang (Medium)</option>
+                <option value="low">Rendah (Low)</option>
               </select>
             </div>
           </div>
@@ -575,11 +641,25 @@ export default function DashboardPage() {
                 disabled={formSubmitting}
                 className="w-full bg-nb-surface text-nb-ink border-nb px-4 h-12 text-base font-body focus:outline-none focus:border-nb-blue transition-colors cursor-pointer"
               >
-                <option value="todo">🔘 Belum Dimulai</option>
-                <option value="inprogress">🔵 Sedang Dikerjakan</option>
-                <option value="done">🟢 Selesai</option>
+                <option value="todo">Belum Dimulai</option>
+                <option value="inprogress">Sedang Dikerjakan</option>
+                <option value="done">Selesai</option>
               </select>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="task-is-group"
+              checked={formIsGroup}
+              onChange={(e) => setFormIsGroup(e.target.checked)}
+              disabled={formSubmitting || !!editingTask}
+              className="w-4 h-4 text-nb-yellow bg-nb-surface border-nb-2 focus:ring-nb-yellow focus:ring-2"
+            />
+            <label htmlFor="task-is-group" className="font-body font-bold text-sm text-nb-ink">
+              Jadikan Tugas Kelompok (Anda bisa mengundang anggota setelah dibuat)
+            </label>
           </div>
 
           <div className="flex justify-end gap-3 border-t-3 border-nb-ink/10 pt-5 mt-3">

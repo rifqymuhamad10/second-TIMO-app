@@ -36,6 +36,7 @@ export default function RootLayout({
       lang="id"
       className={`${spaceGrotesk.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
       data-theme="light"
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-nb-bg text-nb-ink font-body">
         <AuthProvider>

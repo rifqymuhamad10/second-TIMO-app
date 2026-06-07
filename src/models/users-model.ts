@@ -1,6 +1,11 @@
 import { supabase } from "@/lib/supabaseClient";
+import { isMockEnabled, mockDb } from "@/lib/mockDb";
 
 export async function findUserByEmail(email: string) {
+  if (isMockEnabled) {
+    return mockDb.findUserByEmail(email);
+  }
+
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -15,6 +20,10 @@ export async function findUserByEmail(email: string) {
 }
 
 export async function insertUser(userData: any) {
+  if (isMockEnabled) {
+    return mockDb.insertUser(userData);
+  }
+
   const { data, error } = await supabase
     .from("users")
     .insert([userData])
@@ -29,6 +38,10 @@ export async function insertUser(userData: any) {
 }
 
 export async function findUserById(id: number) {
+  if (isMockEnabled) {
+    return mockDb.findUserById(id);
+  }
+
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -42,6 +55,7 @@ export async function findUserById(id: number) {
   return data;
 }
 
+<<<<<<< HEAD
 export async function updateUserStats(id: number, updates: { 
   total_points?: number; 
   current_streak?: number; 
@@ -51,6 +65,16 @@ export async function updateUserStats(id: number, updates: {
   const { data, error } = await supabase
     .from("users")
     .update(updates)
+=======
+export async function updateUserById(id: number, userData: any) {
+  if (isMockEnabled) {
+    return mockDb.updateUserById(id, userData);
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .update(userData)
+>>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5
     .eq("id", id)
     .select()
     .single();
@@ -61,3 +85,7 @@ export async function updateUserStats(id: number, updates: {
 
   return data;
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5

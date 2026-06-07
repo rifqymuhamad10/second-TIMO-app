@@ -11,6 +11,8 @@ interface FilterBarProps {
   // Untuk status filter cepat di mobile
   status: string;
   setStatus: (status: string) => void;
+  taskType: string;
+  setTaskType: (type: string) => void;
 }
 
 export default function FilterBar({
@@ -20,6 +22,8 @@ export default function FilterBar({
   setSortBy,
   status,
   setStatus,
+  taskType,
+  setTaskType,
 }: FilterBarProps) {
   const quickStatusOptions = [
     { value: "all", label: "Semua" },
@@ -63,6 +67,28 @@ export default function FilterBar({
         })}
       </div>
 
+      {/* Tengah: Quick Task Type filter (Desktop & Mobile) */}
+      <div className="flex items-center gap-1 border-2 border-nb-ink p-1 bg-nb-bg h-11 self-start md:self-auto">
+        {[
+          { value: "all", label: "Semua" },
+          { value: "individual", label: "Individu" },
+          { value: "group", label: "Kelompok" },
+        ].map((opt) => {
+          const isActive = taskType === opt.value;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setTaskType(opt.value)}
+              className={`px-3 py-1 text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                isActive ? "bg-nb-blue border-nb-2 text-white shadow-[1px_1px_0px_#1A1A1A]" : "text-nb-ink/60 hover:text-nb-ink"
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Kanan: Sort Dropdown */}
       <div className="flex items-center gap-2 h-11">
         <div className="border-nb-2 bg-nb-bg px-3 h-full flex items-center text-nb-ink/60">
@@ -77,10 +103,10 @@ export default function FilterBar({
           onChange={(e) => setSortBy(e.target.value)}
           className="bg-nb-bg text-nb-ink border-nb-2 border-l-0 -ml-2.5 px-4 h-full text-xs font-bold uppercase tracking-wider focus:outline-none cursor-pointer focus:border-nb-blue"
         >
-          <option value="deadline-asc">📅 Tenggat Terdekat</option>
-          <option value="deadline-desc">📅 Tenggat Terjauh</option>
-          <option value="created-desc">🆕 Terbaru Dibuat</option>
-          <option value="created-asc">⏳ Terlama Dibuat</option>
+          <option value="deadline-asc">Tenggat Terdekat</option>
+          <option value="deadline-desc">Tenggat Terjauh</option>
+          <option value="created-desc">Terbaru Dibuat</option>
+          <option value="created-asc">Terlama Dibuat</option>
         </select>
       </div>
     </div>
