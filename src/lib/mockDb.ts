@@ -139,6 +139,50 @@ export const mockDb = {
     }
     return task || null;
   },
+  findTaskById: async (id: number) => {
+    const db = readDb();
+    const task = db.tasks.find((t: any) => Number(t.id) === Number(id));
+    if (!task) return null;
+    const creator = db.users.find((u: any) => Number(u.id) === Number(task.user_id));
+    return {
+      ...task,
+      task_members: [
+        {
+          id: 1,
+          task_id: task.id,
+          user_id: task.user_id,
+          role: "owner",
+          joined_at: task.created_at,
+          users: creator ? {
+            id: creator.id,
+            username: creator.username,
+            email: creator.email
+          } : null
+        }
+      ]
+    };
+  },
+  updateTaskById: async (id: number, taskData: any) => {
+    const db = readDb();
+    const idx = db.tasks.findIndex((t: any) => Number(t.id) === Number(id));
+    if (idx === -1) throw new Error('Task not found');
+    db.tasks[idx] = {
+      ...db.tasks[idx],
+      ...taskData,
+      updated_at: new Date().toISOString()
+    };
+    writeDb(db);
+    return db.tasks[idx];
+  },
+  deleteTaskById: async (id: number) => {
+    const db = readDb();
+    const task = db.tasks.find((t: any) => Number(t.id) === Number(id));
+    if (task) {
+      db.tasks = db.tasks.filter((t: any) => Number(t.id) !== Number(id));
+      writeDb(db);
+    }
+    return task || null;
+  },
 
   insertPomodoroSession: async (sessionData: any) => {
     const db = readDb();

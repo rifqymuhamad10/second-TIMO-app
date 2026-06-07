@@ -55,26 +55,19 @@ export async function findUserById(id: number) {
   return data;
 }
 
-<<<<<<< HEAD
 export async function updateUserStats(id: number, updates: { 
   total_points?: number; 
   current_streak?: number; 
   longest_streak?: number; 
   last_completion_date?: string; 
 }) {
-  const { data, error } = await supabase
-    .from("users")
-    .update(updates)
-=======
-export async function updateUserById(id: number, userData: any) {
   if (isMockEnabled) {
-    return mockDb.updateUserById(id, userData);
+    return mockDb.updateUserById(id, updates);
   }
 
   const { data, error } = await supabase
     .from("users")
-    .update(userData)
->>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5
+    .update(updates)
     .eq("id", id)
     .select()
     .single();
@@ -85,7 +78,22 @@ export async function updateUserById(id: number, userData: any) {
 
   return data;
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5
+export async function updateUserById(id: number, userData: any) {
+  if (isMockEnabled) {
+    return mockDb.updateUserById(id, userData);
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .update(userData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}

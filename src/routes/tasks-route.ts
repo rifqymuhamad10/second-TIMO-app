@@ -98,7 +98,10 @@ export async function deleteTaskHandler(request: Request, id: number) {
     if (error.message === "unauthorized") {
       return NextResponse.json({ message: "unauthorized" }, { status: 401 });
     }
-    if (error.message === "Task not found or forbidden") {
+    if (
+      error.message === "Task not found or forbidden" || 
+      error.message.includes("Hanya pemilik tugas")
+    ) {
       return NextResponse.json({ message: error.message }, { status: 403 });
     }
     return NextResponse.json(

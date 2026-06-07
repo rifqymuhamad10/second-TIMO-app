@@ -108,7 +108,6 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-<<<<<<< HEAD
   // Fetch user stats for gamification
   const fetchUserStats = async () => {
     try {
@@ -131,7 +130,7 @@ export default function DashboardPage() {
       console.error("Failed to fetch user stats:", err);
     }
   };
-=======
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -145,7 +144,6 @@ export default function DashboardPage() {
       }
     }
   }, []);
->>>>>>> 3f7193f0cc77dcb10cdfaf42384c521ac7366ec5
 
   // List mata kuliah unik untuk filter di sidebar
   const availableSubjects = useMemo(() => {
