@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isMockEnabled, mockDb } from "@/lib/mockDb";
 import { findTaskIdsByUserId, insertTaskMember } from "./task-members-model";
 
@@ -15,7 +15,7 @@ export async function findTasksByUserId(userId: number) {
   }
 
   // Step 2: Fetch full task data with members
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("tasks")
     .select(`
       *,
@@ -46,7 +46,7 @@ export async function findTaskById(id: number) {
     return mockDb.findTaskById(id);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("tasks")
     .select(`
       *,
@@ -85,7 +85,7 @@ export async function insertTask(taskData: any) {
     return mockDb.insertTask(taskData);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("tasks")
     .insert([taskData])
     .select()
@@ -108,7 +108,7 @@ export async function updateTaskById(id: number, taskData: any) {
     return mockDb.updateTaskById(id, taskData);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("tasks")
     .update(taskData)
     .eq("id", id)
@@ -135,7 +135,7 @@ export async function deleteTaskById(id: number) {
     return mockDb.deleteTaskById(id);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("tasks")
     .delete()
     .eq("id", id)

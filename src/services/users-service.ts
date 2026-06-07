@@ -1,8 +1,10 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { findUserByEmail, insertUser, findUserById, updateUserById } from "@/models/users-model";
+import { findUserByEmail, insertUser, findUserById, updateUserById, findUserByVerificationToken, markEmailVerified } from "@/models/users-model";
 import { insertSession, findSessionByToken, deleteSessionByToken } from "@/models/sessions-model";
 import { checkAndResetStreak } from "./gamification-service";
+import { resend, EMAIL_FROM, BASE_URL } from "@/lib/resend";
+import { buildVerificationEmail } from "@/lib/email-templates";
 
 export async function registerUser(payload: any) {
   const { username, password, email, role, institution, major } = payload;
@@ -28,6 +30,10 @@ export async function registerUser(payload: any) {
   const validRoles = ["mahasiswa", "pelajar", "umum"];
   const finalRole = validRoles.includes(role) ? role : "mahasiswa";
 
+  // Generate token verifikasi email
+  const verificationToken = crypto.randomUUID();
+  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 jam
+
   // Buat data user baru
   const newUserData = {
     username,
@@ -40,12 +46,32 @@ export async function registerUser(payload: any) {
     current_streak: 0,
     longest_streak: 0,
     streak_freeze: 0,
+    email_verified: false,
+    email_verification_token: verificationToken,
+    email_verification_expires_at: verificationExpires.toISOString(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
   // Simpan ke database
   const user = await insertUser(newUserData);
+
+  // Kirim email verifikasi (non-blocking — jangan gagalkan registrasi jika email gagal)
+  try {
+    const verifyUrl = `${BASE_URL}/api/verify-email?token=${verificationToken}`;
+    const { subject, html } = buildVerificationEmail({ username, verifyUrl });
+
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: email,
+      subject,
+      html,
+    });
+  } catch (emailError) {
+    // Log tapi jangan throw — user tetap berhasil terdaftar
+    console.error("[registerUser] Gagal mengirim email verifikasi:", emailError);
+  }
+
   return user;
 }
 
@@ -102,9 +128,9 @@ export async function getCurrentUser(token: string) {
   user = await checkAndResetStreak(user);
 
   // 3. Keamanan: Hapus password hash dari response
-  const { password, ...userWithoutPassword } = user;
+  const { password, email_verification_token, email_verification_expires_at, ...userWithoutSensitive } = user;
 
-  return userWithoutPassword;
+  return userWithoutSensitive;
 }
 
 export async function logoutUser(token: string) {
@@ -186,7 +212,32 @@ export async function updateUserProfile(token: string, payload: any) {
   }
 
   const updatedUser = await updateUserById(user.id, updateData);
-  const { password: _, ...userWithoutPassword } = updatedUser;
-  return userWithoutPassword;
+  const { password: _, email_verification_token, email_verification_expires_at, ...userWithoutSensitive } = updatedUser;
+  return userWithoutSensitive;
 }
 
+// ─── Email Verification ───────────────────────────────────────────────────────
+
+export async function verifyEmail(token: string) {
+  if (!token) {
+    throw new Error("Token tidak valid");
+  }
+
+  const user = await findUserByVerificationToken(token);
+  if (!user) {
+    throw new Error("Token tidak valid atau sudah digunakan");
+  }
+
+  // Cek expiry
+  if (user.email_verification_expires_at) {
+    const expiresAt = new Date(user.email_verification_expires_at);
+    if (expiresAt < new Date()) {
+      throw new Error("Token sudah kedaluwarsa. Silakan daftar ulang.");
+    }
+  }
+
+  // Tandai email sebagai terverifikasi
+  await markEmailVerified(user.id);
+
+  return user;
+}

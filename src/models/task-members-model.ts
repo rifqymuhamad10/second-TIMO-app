@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isMockEnabled, mockDb } from "@/lib/mockDb";
 
 export async function findTaskMembersByTaskId(taskId: number) {
@@ -7,7 +7,7 @@ export async function findTaskMembersByTaskId(taskId: number) {
     return task?.task_members || [];
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("task_members")
     .select(`
       id,
@@ -46,7 +46,7 @@ export async function findTaskMember(taskId: number, userId: number) {
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("task_members")
     .select("*")
     .eq("task_id", taskId)
@@ -71,7 +71,7 @@ export async function insertTaskMember(taskId: number, userId: number, role: str
     };
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("task_members")
     .insert([{
       task_id: taskId,
@@ -96,7 +96,7 @@ export async function deleteTaskMember(taskId: number, userId: number) {
     };
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("task_members")
     .delete()
     .eq("task_id", taskId)
@@ -117,7 +117,7 @@ export async function findTaskIdsByUserId(userId: number) {
     return tasks.map((t: any) => t.id);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("task_members")
     .select("task_id")
     .eq("user_id", userId);

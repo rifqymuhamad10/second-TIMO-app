@@ -163,31 +163,28 @@ export async function logoutHandler(request: Request) {
       token = cookieStore.get("token")?.value || "";
     }
 
-    if (!token) {
-      return NextResponse.json(
-        { message: "unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const user = await logoutUser(token);
-
-    // Hapus cookie
+    // Selalu hapus cookie terlebih dahulu, apapun kondisinya
     const cookieStore = await cookies();
-    cookieStore.delete("token");
+    cookieStore.set("token", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 0,
+    });
 
-    return NextResponse.json(
-      { data: user },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    if (error.message === "unauthorized") {
-      return NextResponse.json(
-        { message: "unauthorized" },
-        { status: 401 }
-      );
+    if (!token) {
+      return NextResponse.json({ data: "logged out" }, { status: 200 });
     }
 
+    try {
+      const user = await logoutUser(token);
+      return NextResponse.json({ data: user }, { status: 200 });
+    } catch {
+      // Session mungkin sudah tidak ada (e.g. setelah reset DB), tapi cookie sudah dihapus
+      return NextResponse.json({ data: "logged out" }, { status: 200 });
+    }
+  } catch (error: any) {
     return NextResponse.json(
       { message: "Internal server error", error: error.message },
       { status: 500 }

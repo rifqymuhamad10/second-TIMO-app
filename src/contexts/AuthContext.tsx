@@ -16,6 +16,7 @@ interface User {
   current_streak?: number;
   longest_streak?: number;
   streak_freeze?: number;
+  email_verified?: boolean;
 }
 
 interface AuthContextType {
@@ -49,7 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(result.data);
         setToken(authToken);
       } else {
-        // Token tidak valid atau kedaluwarsa — hapus semua sesi & alihkan ke login
+        // Token tidak valid atau kedaluwarsa — panggil API logout untuk hapus httpOnly cookie di server
+        try {
+          await fetch("/api/users/logout", {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${authToken}` },
+          });
+        } catch { /* abaikan error logout */ }
         logoutState();
         router.replace("/login");
       }

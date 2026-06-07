@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { findSessionByToken, } from "@/models/sessions-model";
 import { findUserById, updateUserById } from "@/models/users-model";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(request: Request) {
   try {
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabaseAdmin.storage
       .from("avatars")
       .upload(filePath, buffer, {
         contentType: file.type,
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     }
 
     // 5. Dapatkan public URL
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = supabaseAdmin.storage
       .from("avatars")
       .getPublicUrl(filePath);
 

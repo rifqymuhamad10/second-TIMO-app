@@ -72,6 +72,15 @@ export async function addMemberHandler(request: Request, taskId: number) {
     ) {
       return NextResponse.json({ message: error.message }, { status: 400 });
     }
+    if (error.message === "EMAIL_NOT_REGISTERED") {
+      return NextResponse.json({
+        message: "Email belum terdaftar di TIMO. Kami sudah mengirimkan undangan agar mereka bisa daftar dan langsung join tugas ini.",
+        code: "EMAIL_NOT_REGISTERED"
+      }, { status: 200 }); // 200 karena ini bukan error — undangan terkirim
+    }
+    if (error.message.includes("Verifikasi email")) {
+      return NextResponse.json({ message: error.message }, { status: 403 });
+    }
     return NextResponse.json(
       { message: "Internal server error", error: error.message },
       { status: 500 }

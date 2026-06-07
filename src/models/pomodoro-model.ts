@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isMockEnabled, mockDb } from "@/lib/mockDb";
 
 export interface PomodoroSession {
@@ -17,7 +17,7 @@ export async function insertPomodoroSession(sessionData: PomodoroSession) {
     return mockDb.insertPomodoroSession(sessionData);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("pomodoro_sessions")
     .insert([sessionData])
     .select()
@@ -35,7 +35,7 @@ export async function findPomodoroSessionsByUserId(userId: number) {
     return mockDb.findPomodoroSessionsByUserId(userId);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("pomodoro_sessions")
     .select("*")
     .eq("user_id", userId)
@@ -61,7 +61,7 @@ export async function getPomodoroSessionCountsPerTask(userId: number): Promise<R
   }
 
   // Fetch only completed focus sessions for tasks
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("pomodoro_sessions")
     .select("task_id")
     .eq("user_id", userId)

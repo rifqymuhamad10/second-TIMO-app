@@ -100,21 +100,28 @@ export default function RegisterPage() {
         <div className="w-full max-w-md bg-nb-surface border-nb shadow-nb-lg p-6 md:p-8">
           {success ? (
             <div className="text-center py-6">
-              <div className="w-16 h-16 bg-nb-green border-nb shadow-nb flex items-center justify-center mx-auto mb-6 text-3xl font-black">
-                ✓
+              <div className="w-16 h-16 bg-nb-yellow border-nb shadow-nb flex items-center justify-center mx-auto mb-6 text-3xl font-black">
+                📧
               </div>
               <h3 className="font-display font-extrabold text-xl uppercase tracking-wider mb-2">
-                Pendaftaran Berhasil!
+                Cek Email Kamu!
               </h3>
-              <p className="font-body text-sm text-nb-ink/70 mb-8 leading-relaxed">
-                Akun Anda telah berhasil dibuat. Silakan klik tombol di bawah untuk masuk ke aplikasi.
+              <p className="font-body text-sm text-nb-ink/70 mb-4 leading-relaxed">
+                Akun berhasil dibuat. Kami sudah mengirimkan link verifikasi ke:
+              </p>
+              <div className="bg-nb-yellow/30 border-nb-2 border-nb-ink px-4 py-3 mb-6 font-mono font-bold text-sm text-nb-ink break-all">
+                {email}
+              </div>
+              <p className="font-body text-xs text-nb-ink/60 mb-6 leading-relaxed">
+                Klik link di email untuk mengaktifkan akun. Link berlaku <strong>24 jam</strong>.
+                Kamu bisa login sekarang, namun fitur kolaborasi akan terbuka setelah verifikasi.
               </p>
               <Button
                 variant="primary"
                 onClick={() => router.push("/login")}
                 fullWidth
               >
-                Masuk Sekarang
+                Lanjut ke Login
               </Button>
             </div>
           ) : (

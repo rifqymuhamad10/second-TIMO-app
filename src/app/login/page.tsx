@@ -1,18 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CheckCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verifiedNotif, setVerifiedNotif] = useState<"success" | "error" | null>(null);
+
+  useEffect(() => {
+    const verified = searchParams.get("verified");
+    if (verified === "true") {
+      setVerifiedNotif("success");
+    } else if (verified === "false") {
+      setVerifiedNotif("error");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +101,20 @@ export default function LoginPage() {
             Masuk ke Akunmu
           </h2>
 
+          {verifiedNotif === "success" && (
+            <div className="bg-nb-green/20 border-nb-2 border-nb-green p-4 mb-6 font-body font-bold text-xs uppercase text-nb-green flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Email berhasil diverifikasi! Silakan login.</span>
+            </div>
+          )}
+
+          {verifiedNotif === "error" && (
+            <div className="bg-nb-yellow/30 border-nb-2 border-nb-ink p-4 mb-6 font-body font-bold text-xs uppercase text-nb-ink flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span>Link verifikasi tidak valid atau sudah kedaluwarsa.</span>
+            </div>
+          )}
+
           {error && (
             <div className="bg-nb-red/10 border-nb-2 border-nb-red p-4 mb-6 font-body font-bold text-xs uppercase text-nb-red flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -138,5 +164,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
