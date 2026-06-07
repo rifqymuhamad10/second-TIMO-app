@@ -60,6 +60,7 @@ export async function updateUserStats(id: number, updates: {
   current_streak?: number; 
   longest_streak?: number; 
   last_completion_date?: string; 
+  streak_freeze?: number;
 }) {
   if (isMockEnabled) {
     return mockDb.updateUserById(id, updates);

@@ -64,6 +64,16 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
           Beranda
         </Link>
         <Link
+          href="/shop"
+          className={`font-display font-extrabold text-sm uppercase tracking-wider py-1 border-b-3 transition-colors ${
+            isLinkActive("/shop")
+              ? "border-nb-ink text-nb-ink"
+              : "border-transparent text-nb-ink/70 hover:text-nb-ink"
+          }`}
+        >
+          Toko
+        </Link>
+        <Link
           href="/pomodoro"
           className={`font-display font-extrabold text-sm uppercase tracking-wider py-1 border-b-3 transition-colors ${
             isLinkActive("/pomodoro")

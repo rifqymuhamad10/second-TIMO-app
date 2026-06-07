@@ -20,7 +20,7 @@ import { Task } from "@/components/tasks/TaskCard";
 import { ClipboardList, Hourglass, CheckCircle2, Plus, AlertTriangle } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, refreshUser } = useAuth();
 
   // Tangani respon 401: hapus sesi dan redirect ke login
   const handle401 = async () => {
@@ -104,28 +104,19 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       fetchTasks();
-      fetchUserStats();
+      // Sync local gamification stats with global user state
+      setUserStats({
+        totalPoints: user.total_points || 0,
+        currentStreak: user.current_streak || 0,
+        longestStreak: user.longest_streak || 0,
+      });
     }
   }, [user]);
 
-  // Fetch user stats for gamification
+  // Refresh user stats from server (uses global context)
   const fetchUserStats = async () => {
     try {
-      const activeToken = token || localStorage.getItem("token");
-      const res = await fetch("/api/users/current", {
-        headers: {
-          Authorization: `Bearer ${activeToken}`,
-        },
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        setUserStats({
-          totalPoints: result.data?.total_points || 0,
-          currentStreak: result.data?.current_streak || 0,
-          longestStreak: result.data?.longest_streak || 0,
-        });
-      }
+      await refreshUser();
     } catch (err) {
       console.error("Failed to fetch user stats:", err);
     }
@@ -312,9 +303,27 @@ export default function DashboardPage() {
         throw new Error(result.message || "Gagal menyimpan tugas");
       }
 
+      // Jika ada gamification result (task selesai)
+      if (result.data?.gamification) {
+        const gamif = result.data.gamification;
+        setRewardNotification({
+          pointsEarned: gamif.pointsEarned,
+          currentStreak: gamif.currentStreak,
+          isNewRecord: gamif.isNewRecord,
+        });
+
+        // Update user stats lokal agar instan
+        setUserStats({
+          totalPoints: gamif.totalPoints,
+          currentStreak: gamif.currentStreak,
+          longestStreak: gamif.longestStreak,
+        });
+      }
+
       setModalOpen(false);
-      // Reload tugas
+      // Reload tugas dan stats dari server
       fetchTasks();
+      fetchUserStats();
     } catch (err: any) {
       setFormError(err.message || "Gagal menyimpan tugas");
     } finally {
@@ -345,8 +354,9 @@ export default function DashboardPage() {
         throw new Error(result.message || "Gagal menghapus tugas");
       }
 
-      // Reload tugas
+      // Reload tugas dan stats
       fetchTasks();
+      fetchUserStats();
     } catch (err: any) {
       alert(err.message || "Terjadi kesalahan saat menghapus tugas");
     }
@@ -399,6 +409,9 @@ export default function DashboardPage() {
           currentStreak: gamif.currentStreak,
           longestStreak: gamif.longestStreak,
         });
+      } else {
+        // Sync jika tidak ada reward (misal dari done ke todo)
+        fetchUserStats();
       }
 
       fetchTasks();

@@ -139,3 +139,49 @@ export async function processTaskCompletion(
     ...streakData
   };
 }
+
+/**
+ * Periksa dan pelihara streak harian pengguna (termasuk fitur streak freeze)
+ * Fungsi ini dipanggil secara transparan saat pengguna login atau memuat sesi.
+ */
+export async function checkAndResetStreak(user: any): Promise<any> {
+  if (user.current_streak > 0 && user.last_completion_date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastDate = new Date(user.last_completion_date);
+    lastDate.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - lastDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      // Streak hangus karena tidak menyelesaikan tugas kemarin
+      if ((user.streak_freeze || 0) > 0) {
+        // Konsumsi streak freeze
+        const newStreakFreeze = user.streak_freeze - 1;
+
+        // Set last_completion_date ke kemarin agar streak terselamatkan
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        const updatedUser = await updateUserStats(user.id, {
+          streak_freeze: newStreakFreeze,
+          last_completion_date: yesterday.toISOString(),
+        });
+        
+        // Gabungkan kembali data user
+        return { ...user, ...updatedUser };
+      } else {
+        // Reset streak menjadi 0
+        const updatedUser = await updateUserStats(user.id, {
+          current_streak: 0,
+        });
+        
+        return { ...user, ...updatedUser };
+      }
+    }
+  }
+  return user;
+}
+

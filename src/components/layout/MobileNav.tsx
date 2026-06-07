@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, User, SlidersHorizontal, Plus, Timer } from "lucide-react";
+import { Home, User, SlidersHorizontal, Plus, Timer, Store } from "lucide-react";
 
 interface MobileNavProps {
   onOpenSidebar: () => void;
@@ -48,6 +48,16 @@ export default function MobileNav({ onOpenSidebar, onOpenAddTask }: MobileNavPro
           <SlidersHorizontal className="w-5 h-5 mb-1 stroke-[2]" />
           Filter
         </button>
+
+        <Link
+          href="/shop"
+          className={`flex flex-col items-center justify-center w-16 h-full font-display font-extrabold text-[10px] uppercase tracking-wide transition-colors ${
+            isLinkActive("/shop") ? "text-nb-ink" : "text-nb-ink/50"
+          }`}
+        >
+          <Store className={`w-5 h-5 mb-1 ${isLinkActive("/shop") ? "stroke-[2.5]" : "stroke-[2]"}`} />
+          Toko
+        </Link>
 
         <Link
           href="/pomodoro"
